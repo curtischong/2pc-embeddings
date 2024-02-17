@@ -1,4 +1,5 @@
 # run with: /path/to/yosys -s ./dotproduct.yosys
+# run this: /Users/curtischong/Downloads/oss-cad-suite/bin/yosys -s dotproduct.yosys && npx netlistsvg netlist.json
 # generate diagram with: netlistsvg netlist.json
 
 # read design
