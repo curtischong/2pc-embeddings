@@ -36,7 +36,9 @@ function doObliviousTransfer(
   const N = getJwkInt(pubkey.n as string);
   const d = getJwkInt(privkey.d as string);
 
+  const now = new Date();
   const { x0, x1 } = ot.otSend1();
+console.log("otSend1", new Date() - now);
 
   // BOB
   const { v, k } = ot.otRecv1(inputValue, e, N, x0, x1);
