@@ -18,13 +18,13 @@ let intToBinary = (n:number) => {
     return "0".repeat(bit_len - binary.length) + binary;
 }
 
-let pre2pc = (a:Profile) => {
+let setup = (a:Profile) => {
     let a_bin = a.embedding.map(intToBinary);
     for(let i = 0; i < a_bin.length; i++){
         let label = Math.random() > 0.5 ? 0 : 1;
         a_bin[i] = a_bin[i] + label;
     }
 
-
     // first generate two labels
+    
 }
