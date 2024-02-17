@@ -1,32 +1,31 @@
-// tysm vitalik: https://vitalik.eth.limo/general/2020/03/21/garbled.html
 
-interface Profile {
-    embedding: number[];
+// just to hceck that we are doing the circuits properly
+let dotProduct = (a:number[], b:number[]) => {
+    // TODO: use the circuit
+    return a.map((_, i) => a[i] * b[i]).reduce((a, b) => a + b);
 }
 
-let a:Profile = {
-    embedding: [1, 2, 3],
-};
-let b:Profile = {
-    embedding: [1, 1, 1]
-}
-
-let bit_len = 256;
-
-let intToBinary = (n:number) => {
-    let binary = n.toString(2);
-    return "0".repeat(bit_len - binary.length) + binary;
-}
-
-let pre2pc = (a:Profile) => {
-    let a_bin = a.embedding.map(intToBinary);
-    for(let i = 0; i < a_bin.length; i++){
-        let label = Math.random() > 0.5 ? 0 : 1;
-        a_bin[i] = a_bin[i] + label;
+let require = <T>(a:T, b:T) =>{
+    if(a !== b){
+        throw new Error("Error: " + a + " !== " + b);
     }
+}
 
-
-    // first generate two labels
-
-
+{
+    // simple similarity
+    let a = [1, 2, 3];
+    let b = [1, 1, 1];
+    require(dotProduct(a, b), 6);
+}
+{
+    // negative
+    let a = [1, 2, 3];
+    let b = [1, -1, -1];
+    require(dotProduct(a, b), -4);
+}
+{
+    // decimals
+    let a = [1.5, 1];
+    let b = [1, 1.5];
+    require(dotProduct(a, b), 3);
 }
