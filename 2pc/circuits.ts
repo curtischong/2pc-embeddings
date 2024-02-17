@@ -1,4 +1,7 @@
 // tysm vitalik: https://vitalik.eth.limo/general/2020/03/21/garbled.html
+// we need to label each intermediate wire
+// is it just an and? if it's more, we're screwed.
+import sha256 from 'crypto-js/sha256';
 
 interface Profile {
     embedding: number[];
@@ -19,12 +22,14 @@ let intToBinary = (n:number) => {
 }
 
 let setup = (a:Profile) => {
-    let a_bin = a.embedding.map(intToBinary);
-    for(let i = 0; i < a_bin.length; i++){
+    let Abin = a.embedding.map(intToBinary);
+    for(let i = 0; i < Abin.length; i++){
         let label = Math.random() > 0.5 ? 0 : 1;
-        a_bin[i] = a_bin[i] + label;
+        Abin[i] = Abin[i] + label;
     }
 
     // first generate two labels
+    let labelsA = Abin.map(sha256);
+    let labelsB = Bbin.map(sha256);
     
 }
