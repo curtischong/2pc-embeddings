@@ -10,22 +10,37 @@ const config = { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }] };
 const ws = new WebSocket('ws://localhost:8080');
 let dataChannel;
 
+console.log({ws})
 ws.onmessage = (message) => {
-    console.log(message.data);
-    const data = JSON.parse(message.data);
-    switch(data.type) {
-        case 'offer':
-            handleOffer(data.offer);
-            break;
-        case 'answer':
-            handleAnswer(data.answer);
-            break;
-        case 'candidate':
-            handleCandidate(data.candidate);
-            break;
-        default:
-            break;
+    if (event.data instanceof Blob) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            // console.log('Received blob text data:', reader.result);
+
+            const data = JSON.parse(reader.result);
+            console.log('Received parsed data:', data.type);
+            switch(data.type) {
+                case 'offer':
+                    console.log('handling offer', data.offer)
+                    handleOffer(data.offer);
+                    break;
+                case 'answer':
+                    console.log('handling answer', data.answer)
+                    handleAnswer(data.answer);
+                    break;
+                case 'candidate':
+                    console.log('handling candidate', data.candidate)
+                    handleCandidate(data.candidate);
+                    break;
+                default:
+                    break;
+            }
+        };
+        reader.readAsText(event.data);
+    } else {
+        console.log('Received text data:', event.data);
     }
+   
 };
 
 connectButton.onclick = async () => {
@@ -34,9 +49,12 @@ connectButton.onclick = async () => {
 
     peerConnection = new RTCPeerConnection(config);
     dataChannel = peerConnection.createDataChannel("chat");
+    
     setupDataChannel();
 
+    
     localStream.getTracks().forEach(track => {
+        
         peerConnection.addTrack(track, localStream);
     });
 
@@ -45,14 +63,17 @@ connectButton.onclick = async () => {
     };
 
     peerConnection.onicecandidate = (event) => {
+        
         if (event.candidate) {
             ws.send(JSON.stringify({'type': 'candidate', 'candidate': event.candidate}));
         }
     };
 
     const offer = await peerConnection.createOffer();
+    
     await peerConnection.setLocalDescription(offer);
     ws.send(JSON.stringify({'type': 'offer', 'offer': offer}));
+    
 };
 
 async function handleOffer(offer) {
@@ -73,6 +94,7 @@ async function handleOffer(offer) {
 
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
+            console.log('w:', w)
             ws.send(JSON.stringify({'type': 'candidate', 'candidate': event.candidate}));
         }
     };
@@ -87,20 +109,32 @@ function handleCandidate(candidate) {
 }
 
 function setupDataChannel() {
-    dataChannel.onopen = () => console.log("Data Channel is open");
+    dataChannel.onopen = () => {
+        console.log("Data Channel is open");
+    };
     dataChannel.onmessage = (event) => {
         const message = event.data;
         displayMessage('Peer', message);
     };
+    dataChannel.onerror = (error) => {
+        console.error("Data Channel Error:", error);
+    };
+    dataChannel.onclose = () => {
+        console.log("Data Channel is closed");
+    };
 }
 
 sendMessageButton.onclick = () => {
-    const message = messageInput.value;
-    dataChannel.send(message);
-    displayMessage('You', message);
-    messageInput.value = ''; // Clear the input after sending
+    
+    if (dataChannel && dataChannel.readyState === 'open') {
+        const message = messageInput.value;
+        dataChannel.send(message);
+        displayMessage('You', message);
+        messageInput.value = ''; // Clear the input after sending
+    } else {
+        console.log('Your Data channel is not open.', dataChannel);
+    }
 };
-
 function displayMessage(sender, message) {
     const messageElement = document.createElement('p');
     messageElement.textContent = `${sender}: ${message}`;
