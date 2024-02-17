@@ -4,6 +4,19 @@ import { bufferToBigInt, bigIntToBuffer } from "./utils";
 function mod(n: bigint, m: bigint): bigint {
   return ((n % m) + m) % m;
 }
+// function modPow2(base:bigint, exponent:bigint, modulus:bigint):bigint {
+//   if (modulus === BigInt(1)) return BigInt(0);
+//   var result = BigInt(1);
+//   base = base % modulus;
+//   while (exponent > 0) {
+//       if (exponent % BigInt(2) == BigInt(1))
+//          result = (result * base) % modulus;
+//       exponent = exponent / BigInt(2);
+//       base = (base * base) % modulus;
+//   }
+//   return result;
+// }
+
 
 /*
   Fast modular exponentiation for a ^ b mod n
@@ -67,7 +80,10 @@ export function otRecv1(
   const k = bufferToBigInt(randomBytes(nbits / 8));
   const xb = [x0, x1][b];
 
-  const v = mod(xb + k ** e, N);
+  // const now = new Date().getTime();
+  // const v = mod(xb + k ** e, N);
+  const v = (xb + modpow(k, e, N)) % N;
+  // console.log("mod", new Date().getTime() - now);
 
   return { v, k };
 }
