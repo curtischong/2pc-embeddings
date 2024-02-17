@@ -4,19 +4,6 @@ import { bufferToBigInt, bigIntToBuffer } from "./utils";
 function mod(n: bigint, m: bigint): bigint {
   return ((n % m) + m) % m;
 }
-// function modPow2(base:bigint, exponent:bigint, modulus:bigint):bigint {
-//   if (modulus === BigInt(1)) return BigInt(0);
-//   var result = BigInt(1);
-//   base = base % modulus;
-//   while (exponent > 0) {
-//       if (exponent % BigInt(2) == BigInt(1))
-//          result = (result * base) % modulus;
-//       exponent = exponent / BigInt(2);
-//       base = (base * base) % modulus;
-//   }
-//   return result;
-// }
-
 
 /*
   Fast modular exponentiation for a ^ b mod n
