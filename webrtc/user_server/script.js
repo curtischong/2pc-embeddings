@@ -86,7 +86,14 @@ async function handleOffer(offer) {
     peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
-    ws.send(JSON.stringify({'type': 'answer', 'answer': answer}));
+
+    if (wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ 'type': 'offer', 'offer': offer }));
+      } else {
+        console.error('WebSocket connection is not open yet.');
+      }
+
+    
 
     peerConnection.ontrack = (event) => {
         remoteVideo.srcObject = event.streams[0];
