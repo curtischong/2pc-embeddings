@@ -28,22 +28,31 @@ app.add_middleware(
 #     allow_headers=["*"],
 # )
 
-connected_devices = {}
+class DeviceInfo(BaseModel):
+    websocket: any
+    profile: dict
+    embedding: list
+
+    class Config:
+        arbitrary_types_allowed = True
+
+connected_devices: dict = {}
 
 class WSResponse(BaseModel):
     uuid: str
     message: str
 
 async def share_embedding(new_uuid: str):
-    new_websocket = connected_devices[new_uuid]
+    new_device = connected_devices[new_uuid]
     coros = []
-    for uuid, websocket in connected_devices.items():
+    for uuid, device_info in connected_devices.items():
         if uuid == new_uuid: continue
-        coros.append(websocket.send_text(f"new uuid joined: {new_uuid}"))
-        coros.append(new_websocket.send_text(f"connected with uuid: {uuid}"))
+        coros.append(device_info.websocket.send_text(f"new uuid joined: {new_uuid}\n" + json.dumps(device_info.embedding)))
+        coros.append(new_device.websocket.send_text(f"connected with uuid: {uuid}\n" + json.dumps(new_device.embedding)))
     # await asyncio.gather(coros)
     for coro in coros:
-        await coro
+        try: await coro
+        except: pass
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -55,7 +64,17 @@ async def websocket_endpoint(websocket: WebSocket):
         data = await websocket.receive_text()
         data = WSResponse(**json.loads(data))
         if data.message == 'connect':
-            connected_devices[data.uuid] = websocket
+            profile = {
+                "MBTI": "INFP - imaginative, open-minded, and curious. Loves exploring new ideas and values personal freedom.",
+                "Love_Languages": "Quality Time, Words of Affirmation - enjoys deep conversations, feeling appreciated through words.",
+                "Hobbies": "reading fantasy novels, hiking in nature, creative writing."
+            }
+
+            connected_devices[data.uuid] = DeviceInfo(
+                websocket=websocket,
+                profile=profile,
+                embedding=generate_embeddings(profile)
+            )
             await share_embedding(data.uuid)
         elif data.message == 'disconnect':
             try: del connected_devices[data.uuid]
