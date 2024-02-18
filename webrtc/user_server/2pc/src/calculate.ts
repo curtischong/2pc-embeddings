@@ -289,9 +289,8 @@ const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
 const aliceComputeDotProduct = () => {
     const embedding = [1,2,3,4]
     // pad embedding to be a multiple of numDimensionsToDot
-    const padding = new Array(numDimensionsToDot - (embedding.length % numDimensionsToDot)).fill(0)
-    const paddedEmbedding = embedding.concat(padding)
-    const numSubEmbeddings = paddedEmbedding.length / numDimensionsToDot
+    const paddedEmbeddingLen = embedding.length + (numDimensionsToDot - (embedding.length % numDimensionsToDot))
+    const numSubEmbeddings = paddedEmbeddingLen / numDimensionsToDot
 
     let totalDotProduct = 0
     for(let subEmbeddingIdx = 0; subEmbeddingIdx < numSubEmbeddings; subEmbeddingIdx++){
@@ -302,6 +301,18 @@ const aliceComputeDotProduct = () => {
     // TODO:
     // sendToBob(totalDotProduct)
     return totalDotProduct;
+}
+
+const sendToAlice = (jsonObj: any) => {
+    if(isAlice){
+        throw new Error("Alice cannot send to herself")
+    }
+}
+
+const sendToBob = (jsonObj: any) => {
+    if(!isAlice){
+        throw new Error("bob cannot send to himself")
+    }
 }
 
 export { aliceComputeDotProduct, aliceInit2pc, bobReceive2pc, aliceReceiveVFromBob, bobResolveInputs, aliceResolve2pc};
