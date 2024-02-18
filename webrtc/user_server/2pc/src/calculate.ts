@@ -3,6 +3,7 @@ import * as ot from "./oblivious-transfer";
 import { getJwkInt, getNthBit } from "./utils";
 import { InputValue } from "./circuit/gates";
 import { Circuit, garbleCircuit, GarbledTable, Labels, NamedLabel } from "./circuit/garble";
+import { MessageType } from "../../types"
 import {
   evalGarbledCircuit,
   resolveOutputLabels,
@@ -142,9 +143,9 @@ const aliceInit2pc = (subEmbeddingIdx: number) => {
     }
 
     // send the OT data to bob
-    // send(garbledCircuit, bobOtInputs, aliceInputLabels, subEmbeddingIdx)
-
-    // TODO: setup the xor
+    sendToBob({
+        garbledCircuit, bobOtInputs, aliceInputLabels, subEmbeddingIdx
+    }, MessageType.AliceInit2pc)
 }
 
 interface BobVK {
@@ -187,7 +188,10 @@ const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx: number) => {
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
     }
-    // sendToAlice(aliceVals)
+    // TODO: save to localStorage: aliceVVals
+    sendToAlice({
+        bobVKVals,
+    }, MessageType.BobReceive2pc)
 }
 
 interface mVals {
@@ -205,7 +209,9 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals, aliceOtInputs:AliceOTInputs
         // we need to send this back to bob: const { m0k, m1k } = 
         bobMVals[inputName] = ot_alice2(aliceVVals[inputName], aliceOtVals)
     }
-    // send(bobMVals)
+    sendToBob({
+        bobMVals
+    }, MessageType.AliceReceiveVFromBob)
 }
 
 const bobResolveInputs = (bobMVals: BobMVals, bobInputs: NamedInputOutput,
@@ -232,12 +238,15 @@ const bobResolveInputs = (bobMVals: BobMVals, bobInputs: NamedInputOutput,
     ); // -> Bob will send to Alice
     console.log("output labels ->", JSON.stringify(outputLabels));
     // sendToAlice(outputLabels)
+    sendToAlice({
+        outputLabels
+    }, MessageType.BobResolveInputs)
 }
 
 // the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
 // to a 1 or a 0
 // This is why we need to do one extra step to resolve the output labels. We can avoid this if Alice sends the output labels to bob at the start.
-const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
+const aliceCalcFinalSum = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
@@ -317,21 +326,15 @@ const aliceComputeDotProduct = () => {
         totalDotProduct += embeddingDotProduct;
     }
 
-    // TODO:
-    // sendToBob(totalDotProduct)
+    sendToBob({totalDotProduct}, MessageType.AliceComputeDotProduct)
     return totalDotProduct;
 }
 
-const sendToAlice = (jsonObj: any) => {
-    if(isAlice){
-        throw new Error("Alice cannot send to herself")
-    }
+const sendToAlice = (jsonObj: any, messageType: MessageType) => {
+    // const aliceIp = get from local storage
 }
 
-const sendToBob = (jsonObj: any) => {
-    if(!isAlice){
-        throw new Error("bob cannot send to himself")
-    }
+const sendToBob = (jsonObj: any, messageType: MessageType) => {
 }
 
-export { aliceComputeDotProduct, aliceInit2pc, bobReceive2pc, aliceReceiveVFromBob, bobResolveInputs, aliceResolve2pc};
+export { aliceComputeDotProduct, aliceInit2pc, bobReceive2pc, aliceReceiveVFromBob, bobResolveInputs, aliceCalcFinalSum};
