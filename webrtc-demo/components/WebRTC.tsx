@@ -73,9 +73,6 @@ export const WebSocketDemo = () => {
         Click Me to send 'Hello'
       </button>
       <span>The WebSocket is currently {connectionStatus}</span>
-      {lastMessage ? (
-  <span>Last message: {lastMessage.data ? lastMessage.data.toString() : ''}</span>
-) : null}
 
       <ul>
         {textMessages.map((message, idx) => (
