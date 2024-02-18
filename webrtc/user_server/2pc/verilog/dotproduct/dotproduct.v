@@ -1,25 +1,26 @@
 module DotProduct(
-    input [4:0] vectorA[3:0], // 4 elements, each 5 bits wide, two's complement
-    input [4:0] vectorB[3:0], // 4 elements, each 5 bits wide, two's complement
-    output reg [15:0] result  // Output wide enough to hold the sum of products
+    input [39:0] vectorA, // 10 elements, each 4 bits
+    input [39:0] vectorB,
+    input [9:0] vectorC, // New binary vector of length 10
+    input [9:0] vectorD, // New binary vector of length 10
+    output reg signed [11:0] result // Adjusted for sum of products
 );
 
-// Intermediate variables for products
-wire signed [9:0] products[3:0]; // Each product could be up to 10 bits wide (5 bits * 5 bits)
+integer i;
 
-// Perform multiplication of corresponding elements
-// and extend the sign bit to ensure correct signed multiplication
-genvar i;
-generate
-    for (i = 0; i < 4; i = i + 1) begin : multiply
-        assign products[i] = $signed(vectorA[i]) * $signed(vectorB[i]);
+always @(vectorA or vectorB or vectorC or vectorD) begin
+    result = 0; // Reset result for each calculation
+    
+    for (i = 0; i < 10; i = i + 1) begin
+        // Directly use XOR to decide if we add or subtract, without storing xorResult
+        if (vectorC[i] ^ vectorD[i] == 1'b0) begin
+            // If XOR result is 0 (vectors C and D are the same for this bit), add to result
+            result = result + ((vectorA[4*i +: 4]) * (vectorB[4*i +: 4]));
+        end else begin
+            // If XOR result is 1 (vectors C and D are different for this bit), subtract from result
+            result = result - ((vectorA[4*i +: 4]) * (vectorB[4*i +: 4]));
+        end
     end
-endgenerate
-
-// Sum the products to get the dot product
-// Initial block to compute the result once inputs are set
-always @(*) begin
-    result = $signed(products[0]) + $signed(products[1]) + $signed(products[2]) + $signed(products[3]);
 end
 
 endmodule
