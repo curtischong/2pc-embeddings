@@ -38,12 +38,16 @@ function evalGarbledTable(
   console.log(`\t-> inputs:${JSON.stringify(inputs)}`);
 
   const { key, label0lsb, label1lsb } = getCombinedKey(Object.values(inputs));
+  console.log("key", key, "label0lsb", label0lsb, "label1lsb", label1lsb, "values", Object.values(inputs))
+
 
   const row = garbledTable.find(
     (r) => r.label0lsb === label0lsb && r.label1lsb === label1lsb,
   );
 
-  if (!row) throw new Error("Valid row not found in garbled table");
+  if (!row){
+    throw new Error("Valid row not found in garbled table");
+  }
 
   const { encrypted, iv, tag } = row;
   return decrypt(key, iv, tag, encrypted);

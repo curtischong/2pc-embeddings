@@ -1,5 +1,5 @@
 import * as ot from "./oblivious-transfer";
-import { base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit, twosComplementToNumber, verifyRSA } from "./utils";
+import { base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit, twosComplementToInteger, twosComplementToNumber, verifyRSA } from "./utils";
 import { InputValue } from "./circuit/gates";
 import { Circuit, garbleCircuit, GarbledTable, Labels, NamedLabel } from "./circuit/garble";
 import { MessageType } from "../../types"
@@ -84,6 +84,9 @@ async function ot_alice1(
 //   const pubkey = publicKey.export({ format: "jwk" });
 //   const privkey = privateKey.export({ format: "jwk" });
 
+// console.log("inputName", inputName)
+// console.log("labelledCircuit", labelledCircuit)
+
   const m0 = Buffer.from(labelledCircuit[inputName][0], "utf-8");
   const m1 = Buffer.from(labelledCircuit[inputName][1], "utf-8");
 
@@ -142,21 +145,17 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     } = garbleCircuit(circuit);
     // TODO(Curtis): send via bluetooth
 
-    const aliceWealth = 2e6; // TODO: set subEmbedding
     const aliceInputs: NamedInputOutput = {};
-    for (let i = 0; i < 32; i++) {
-        aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
-    }
 
-    // const subEmbedding = getSubEmbedding(subEmbeddingIdx)
-    // for(let dim = 0; dim < numDimensionsToDot; dim++) {
-    //     for(let bit = 0; bit < 4; bit++) {
-    //         aliceInputs[`vectorA_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
-    //     }
-    // }
-    // for(let i = 0; i < numDimensionsToDot; i++){
-    //     aliceInputs[`vectorC_${i}`] = subEmbedding.isPositive[i]
-    // }
+    const subEmbedding = getSubEmbedding(subEmbeddingIdx)
+    for(let dim = 0; dim < numDimensionsToDot; dim++) {
+        for(let bit = 0; bit < 4; bit++) {
+            aliceInputs[`vectorA_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
+        }
+    }
+    for(let i = 0; i < numDimensionsToDot; i++){
+        aliceInputs[`vectorC_${i}`] = subEmbedding.isPositive[i]
+    }
 
     const aliceInputLabels = Object.entries(aliceInputs).reduce(
     (inputs: NamedLabel, [name, value]) => {
@@ -173,8 +172,8 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     const bobOtInputs: BobOTInputs = {} // same as AliceOTInputs, but we hide the m0 and m1 values
     // alice starts the OT for all the inputs that bob needs.
     // we already know that bob needs these inputs. so just send it in the starting packet.
-    for (let i = 0; i < 32; i++) {
-        const inputName = `B_${i}`
+    for (let i = 0; i <  numDimensionsToDot * 4; i++) {
+        const inputName = `vectorB_${i}`
         const aliceOtVals = await ot_alice1(inputName, labelledCircuit);
         aliceOtInputs[inputName] = aliceOtVals
 
@@ -185,7 +184,18 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
             x1: aliceOtVals.x1,
         }
     }
-    console.log("bobOtInputs", bobOtInputs)
+    for(let i = 0; i < numDimensionsToDot; i++){
+        const inputName = `vectorD_${i}`
+        const aliceOtVals = await ot_alice1(inputName, labelledCircuit);
+        aliceOtInputs[inputName] = aliceOtVals
+
+        bobOtInputs[inputName] = {
+            e: aliceOtVals.e,
+            N: aliceOtVals.N,
+            x0: aliceOtVals.x0,
+            x1: aliceOtVals.x1,
+        }
+    }
 
     toStorage("labelledCircuit", labelledCircuit)
     toStorage("aliceOtInputs", aliceOtInputs)
@@ -218,31 +228,35 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     toStorage("aliceInputLabels", aliceInputLabels)
     toStorage("subEmbeddingIdx", subEmbeddingIdx)
     // BOB
-    const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
-    for (let i = 0; i < 32; i++) {
-        bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
-    }
 
-    // const subEmbedding = getSubEmbedding(subEmbeddingIdx)
-    // for(let dim = 0; dim < numDimensionsToDot; dim++) {
-    //     for(let bit = 0; bit < 4; bit++) {
-    //         bobInputs[`vectorB_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
-    //     }
-    // }
-    // for(let i = 0; i < numDimensionsToDot; i++){
-    //     bobInputs[`vectorD_${i}`] = subEmbedding.isPositive[i]
-    // }
+    const subEmbedding = getSubEmbedding(subEmbeddingIdx)
+    for(let dim = 0; dim < numDimensionsToDot; dim++) {
+        for(let bit = 0; bit < 4; bit++) {
+            bobInputs[`vectorB_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
+        }
+    }
+    for(let i = 0; i < numDimensionsToDot; i++){
+        bobInputs[`vectorD_${i}`] = subEmbedding.isPositive[i]
+    }
+    console.log("bobInputs", bobInputs)
 
     const bobVKVals: BobVKVals = {}
     const aliceVVals: AliceVVals = {}
 
-    for(let i = 0; i < 32; i++) {
-        const inputName = `B_${i}`
+    for(let i = 0; i < numDimensionsToDot * 4; i++) {
+        const inputName = `vectorB_${i}`
         const { v, k } = ot_bob1(bobInputs[inputName], bobOtInputs[inputName]);
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
     }
+    for(let i = 0; i < numDimensionsToDot; i++){
+        const inputName = `vectorD_${i}`
+        const { v, k } = ot_bob1(bobInputs[inputName], bobOtInputs[inputName]);
+        bobVKVals[inputName] = { v, k }
+        aliceVVals[inputName] = v
+    }
+
     toStorage("bobVKVals", bobVKVals)
     toStorage("bobInputs", bobInputs)
     // TODO: save to localStorage: aliceVVals
@@ -281,18 +295,20 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
     const bobOTInputs = fromStorage("bobOtInputs") as BobOTInputs
     const garbledCircuit = fromStorage("garbledCircuit") as GarbledTable[]
     const aliceInputLabels = fromStorage("aliceInputLabels") as NamedLabel
-    console.log("bobInputs", bobInputs)
-    console.log("bobVKVals", bobVKVals)
-    console.log("bobOTInputs", bobOTInputs)
-    console.log("garbledCircuit", garbledCircuit)
-    console.log("aliceInputLabels", aliceInputLabels)
 
     const bobInputLabels:NamedLabel = {}
-    for(let i = 0; i < 32; i++) {
-        const inputName = `B_${i}`
+    for(let i = 0; i < numDimensionsToDot * 4; i++) {
+        const inputName = `vectorB_${i}`
         const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
         bobInputLabels[inputName] = m
     }
+    for(let i = 0; i < numDimensionsToDot; i++) {
+        const inputName = `vectorD_${i}`
+        const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
+        bobInputLabels[inputName] = m
+    }
+    console.log("aliceInputLabels", aliceInputLabels)
+    console.log("garbledCircuit", garbledCircuit)
 
     console.log(`bob inputs -> ${JSON.stringify(bobInputs)}`);
     console.log(`bob input labels -> ${JSON.stringify(bobInputLabels)}`);
@@ -320,24 +336,13 @@ const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
-
-
-    // by inspection of the diagram, result_0 is the least significant bit
-
-    // let numOutputs = 12
-    // // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
-    // let finalSum = 0 
-    // for(let i = 0; i < numOutputs; i++){
-//         const jthBit = outputs[`result_${i}`]
-//         const finalSum = finalSum + (jthBit << i)
-    // }
-    // return finalSum
-
-    // let binaryBits = ""
-    // for(let i = 0; i < numOutputs; i++){
-    //     binaryBits = outputs[`result_${i}`] + binaryBits
-    // }
-    // return twosComplementToNumber(binaryBits)
+    let finalNum = ""
+    for(let i = 0; i < 12; i++){
+        finalNum = outputs[`result_${i}`] + finalNum
+    }
+    const ans = twosComplementToNumber(finalNum)
+    console.log('ans', ans)
+    return ans
 }
 
 
@@ -348,8 +353,8 @@ const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
 
 const quantizeTo4Bits = (value: number): number => {
     // Ensure the value is within the expected range
-    if (value < 0 || value > 1) {
-      throw new Error('Value must be between 0 and 1');
+    if (value < -1 || value > 1) {
+      throw new Error('Value must be between -1 and 1');
     }
   
     // Scale the value to the range 0 to 15 and round it
@@ -359,7 +364,7 @@ const quantizeTo4Bits = (value: number): number => {
   }
 
 interface QuantizedInput {
-    isPositive: number[],
+    isPositive: InputValue[],
     quantized: number[]
 }
 

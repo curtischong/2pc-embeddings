@@ -148,3 +148,13 @@ export function twosComplementToNumber(binStr: string): number {
 
   return result;
 }
+
+export function twosComplementToInteger(binaryStr:string):number {
+  // Assuming binaryStr is a string representing a binary number in two's complement.
+  if (binaryStr.length < 32) {
+      // Pad the binary string to 32 bits if it's shorter.
+      binaryStr = binaryStr.padStart(32, binaryStr[0]);
+  }
+  // Convert the binary string to a decimal number.
+  return parseInt(binaryStr, 2) << 0;
+}

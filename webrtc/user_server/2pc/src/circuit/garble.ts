@@ -123,6 +123,8 @@ export function getCombinedKey(labels: string[]): {
   label1lsb?: Bit;
 } {
   const label0lsb = getLeastSignificantBit(Buffer.from(labels[0], "hex"));
+  // console.log("label0lsb", label0lsb)
+  // console.log("labels[1]", labels[1])
   const label1lsb = labels[1]
     ? getLeastSignificantBit(Buffer.from(labels[1], "hex"))
     : undefined;
@@ -227,8 +229,8 @@ export function decrypt(
   decipher.setAuthTag(tag);
   encrypted = Buffer.from(encrypted);
   let data = decipher.update(encrypted, undefined, "utf8");
-  console.log("data", data)
   // data += decipher.final("utf8");
+  console.log("data", data)
   return data;
 }
 
@@ -253,6 +255,9 @@ export function garbleCircuit(circuit: Circuit) {
 
   for (const gateIndex in circuit) {
     const gate = circuit[gateIndex];
+    // if(gate.inputs[0] === "vectorC_0"){
+    //   debugger
+    // }
     const { labels, labelledTable } = labelWires(
       gate.gate,
       gate.inputs,
@@ -260,6 +265,11 @@ export function garbleCircuit(circuit: Circuit) {
       Number(gateIndex),
       labelledCircuit,
     );
+    for(const entry of Object.values(labels)){
+      if(entry.length === 2){
+        // debugger
+      }
+    }
 
     labelledCircuit = Object.assign(labelledCircuit, labels);
     garbledCircuit.push(garbleTable(labelledTable));
