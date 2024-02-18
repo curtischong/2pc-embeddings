@@ -10,7 +10,6 @@ import {
 } from "./circuit/evaluate";
 import { parseVerilog } from "./verilog";
 import { circuitStr } from "./circuitStr";
-import { SendMessage } from "react-use-websocket";
 
 const numDimensionsToDot = 10
 type AliceOTVals = {
@@ -191,9 +190,9 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     toStorage("subEmbeddingIdx", subEmbeddingIdx)
 
     // send the OT data to bob
-    sendToBob({
+    sendMessage({
         garbledCircuit, bobOtInputs, aliceInputLabels, subEmbeddingIdx
-    }, MessageType.AliceInit2pc, sendMessage)
+    }, MessageType.AliceInit2pc)
 }
 
 interface BobVK {
@@ -244,9 +243,9 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     toStorage("bobVKVals", bobVKVals)
     toStorage("bobInputs", bobInputs)
     // TODO: save to localStorage: aliceVVals
-    sendToAlice({
+    sendMessage({
         aliceVVals,
-    }, MessageType.BobReceive2pc, sendMessage)
+    }, MessageType.BobReceive2pc)
 }
 
 interface mVals {
@@ -266,9 +265,9 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: any) => {
         // we need to send this back to bob: const { m0k, m1k } = 
         bobMVals[inputName] = ot_alice2(aliceVVals[inputName], aliceOtVals)
     }
-    sendToBob({
+    sendMessage({
         bobMVals
-    }, MessageType.AliceReceiveVFromBob, sendMessage)
+    }, MessageType.AliceReceiveVFromBob)
 }
 
 const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
@@ -299,9 +298,9 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
     ); // -> Bob will send to Alice
     console.log("output labels ->", JSON.stringify(outputLabels));
     // sendToAlice(outputLabels)
-    sendToAlice({
+    sendMessage({
         outputLabels
-    }, MessageType.BobResolveInputs, sendMessage)
+    }, MessageType.BobResolveInputs)
 }
 
 // the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
@@ -366,7 +365,7 @@ const quantizeVector = (embedding:number[]): QuantizedInput => {
     }
 }
 
-const calculateDotProduct = (subEmbeddingIdx:number, sendMessage:SendMessage):number => {
+const calculateDotProduct = (subEmbeddingIdx:number, sendMessage:any):number => {
     // TODO: init 2PC
     aliceInit2pc(subEmbeddingIdx, sendMessage);
     // TODO: return a value one all of the embeddings is finished
@@ -383,7 +382,7 @@ const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
 }
 
 // TODO: figure this out
-const aliceComputeDotProduct = (sendMessage: SendMessage) => {
+const aliceComputeDotProduct = (sendMessage: any) => {
     const embedding = fromStorage("embedding") as number[]
     // pad embedding to be a multiple of numDimensionsToDot
     const paddedEmbeddingLen = embedding.length + (numDimensionsToDot - (embedding.length % numDimensionsToDot))
@@ -395,24 +394,10 @@ const aliceComputeDotProduct = (sendMessage: SendMessage) => {
         totalDotProduct += embeddingDotProduct;
     }
 
-    sendToBob({totalDotProduct}, MessageType.AliceComputeDotProduct, sendMessage)
+    sendMessage({totalDotProduct}, MessageType.AliceComputeDotProduct)
     return totalDotProduct;
 }
 
-const sendToAlice = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
-    // const aliceIp = get from local storage
-    sendMessage({
-        ...jsonObj,
-        messageType
-    })
-}
-
-const sendToBob = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
-    sendMessage({
-        ...jsonObj,
-        messageType
-    })
-}
 
 const clearStorage = () => {
     const savedToStorage = ["labelledCircuit", "aliceOtInputs", "subEmbeddingIdx", "garbledCircuit", "bobOtInputs", "aliceInputLabels", "bobVKVals", "bobInputs"]

@@ -4,6 +4,7 @@ import Head from 'next/head';
 import { useCallback, useEffect, useState } from 'react';
 import { MessageType } from '../types';
 import { aliceCalcFinalSum, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
+import { Message } from 'postcss';
 
 const SERVER_IP = 'localhost';
 
@@ -15,6 +16,23 @@ function generateUuidV4() {
 }
 
 const ws = new WebSocket("ws://" + SERVER_IP + ":8000/ws");
+const sendMessage = (message: any, messageType: MessageType) => {
+    // ws.send(JSON.stringify({
+    //     ...message,
+    //     "2pc": true,
+    //     messageType,
+    // }));
+    ws.send(JSON.stringify({
+        uuid: message.uuid,
+        message: 'send',
+        target_uuid: message.target_uuid,
+        data: {
+            ...message,
+            "2pc": true,
+            messageType,
+        }
+    }));
+}
 
 export default function ToggleBeacon() {
     const [beaconActive, setBeaconActive] = useState(false);
@@ -36,13 +54,58 @@ export default function ToggleBeacon() {
         console.log(event.data);
         // console.log(JSON.parse(event.data));
 
+
         try {
-            const json_data = JSON.parse(event.data);
-            if ('uuids' in json_data) {
-                setKnownUUIDS(json_data.uuids);
+            const message = JSON.parse(event.data);
+            if ('uuids' in message) {
+                setKnownUUIDS(message.uuids);
             }
-        } catch {}
-        
+
+            if('2pc' in message){
+                const aliceUUID = message.uuid
+                const bobUUID = message.target_uuid
+                const sendBobMessage = (message: any, messageType: MessageType) => {
+                    sendMessage({
+                        ...message,
+                        uuid: aliceUUID,
+                        target_uuid: bobUUID,
+                    }, messageType)
+                }
+                const sendAliceMessage = (message: any, messageType: MessageType) => {
+                    sendMessage({
+                        ...message,
+                        uuid: bobUUID,
+                        target_uuid: aliceUUID,
+                    },messageType)
+                }
+
+                const messageType = message.messageType
+                console.log(messageType)
+                switch (messageType) {
+                case MessageType.AliceInit2pc:
+                    // setCurrentPerson('Bob')
+                    bobReceive2pc(message.garbledCircuit, message.bobOtInputs, message.aliceInputLabels, message.subEmbeddingIdx, sendAliceMessage)
+                    break;
+                case MessageType.BobReceive2pc:
+                    aliceReceiveVFromBob(message.aliceVVals, sendBobMessage)
+                    break;
+                case MessageType.AliceReceiveVFromBob:
+                    bobResolveInputs(message.bobVVals, sendAliceMessage)
+                    break;
+                case MessageType.BobResolveInputs:
+                    aliceCalcFinalSum(message.outputLabels)
+                    break;
+                case MessageType.AliceComputeDotProduct:
+                    console.log('Alice computed dot product:', message.totalDotProduct)
+                    break;
+                default:
+                    console.log("unhandled msgType", messageType)
+                    break;
+                }
+            }
+        } catch(e) {
+            console.warn(e);
+        }
     };
 
     ws.onopen = function(event) {
@@ -90,10 +153,25 @@ export default function ToggleBeacon() {
     // }
 
     const connectWithOther = (target_uuid: string) => {
-        ws.send(JSON.stringify({
-            uuid: uuid,
-            message: 'share ' + target_uuid
-        }));
+        // ws.send(JSON.stringify({
+        //     uuid: uuid,
+        //     message: 'share ' + target_uuid
+        // }));
+        
+        aliceInit2pc(0, (message:any, messageType:MessageType) => {
+            sendMessage({ // we are alice sending to bob
+                ...message,
+                uuid,
+                target_uuid,
+            }, messageType)
+        });
+        // ws.send(JSON.stringify({
+        //     uuid: uuid,
+        //     message: 'send',
+        //     target_uuid: target_uuid,
+        //     data: {
+        //     } 
+        // }));
     }
 
 
