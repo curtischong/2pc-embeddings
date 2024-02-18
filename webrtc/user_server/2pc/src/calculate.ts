@@ -166,8 +166,10 @@ interface AliceVVals{
     [inputName: string]: bigint
 }
 
-const bobReceive2pc = (bobOtInputs: BobOTInputs, subEmbeddingIdx: number, sendMessage: SendMessage) => {
+const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, aliceInputLabels: NamedLabel, subEmbeddingIdx: number, sendMessage: SendMessage) => {
+    toStorage("garbledCircuit", garbledCircuit)
     toStorage("bobOtInputs", bobOtInputs)
+    toStorage("aliceInputLabels", aliceInputLabels)
     toStorage("subEmbeddingIdx", subEmbeddingIdx)
     // BOB
     const bobWealth = 1e6;
@@ -196,6 +198,7 @@ const bobReceive2pc = (bobOtInputs: BobOTInputs, subEmbeddingIdx: number, sendMe
         aliceVVals[inputName] = v
     }
     toStorage("bobVKVals", bobVKVals)
+    toStorage("bobInputs", bobInputs)
     // TODO: save to localStorage: aliceVVals
     sendToAlice({
         aliceVVals,
@@ -211,7 +214,7 @@ interface BobMVals {
 }
 
 const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: SendMessage) => {
-    const aliceOtInputs = {} // TODO: get from local storage
+    const aliceOtInputs = fromStorage("aliceOtInputs") as AliceOTInputs
     const bobMVals: BobMVals = {}
     for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
         // const { m0k, m1k } = ot_alice2(bobV, aliceOtVals);
@@ -223,10 +226,12 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: SendMessage) =
     }, MessageType.AliceReceiveVFromBob, sendMessage)
 }
 
-const bobResolveInputs = (bobMVals: BobMVals, 
-    bobOTInputs: BobOTInputs, bobVKVals: BobVKVals, garbledCircuit: GarbledTable[],
-    aliceInputLabels:NamedLabel, sendMessage: SendMessage) => {
-    const bobInputs: NamedInputOutput = {};// TODO: get from local storage
+const bobResolveInputs = (bobMVals: BobMVals, sendMessage: SendMessage) => {
+    const bobInputs = fromStorage("bobInputs") as NamedInputOutput
+    const bobVKVals = fromStorage("bobVKVals") as BobVKVals
+    const bobOTInputs = fromStorage("bobOTInputs") as BobOTInputs
+    const garbledCircuit = fromStorage("garbledCircuit") as GarbledTable[]
+    const aliceInputLabels = fromStorage("aliceInputLabels") as NamedLabel
 
     const bobInputLabels:NamedLabel = {}
     for(let i = 0; i < 32; i++) {
