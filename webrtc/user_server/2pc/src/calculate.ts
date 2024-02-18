@@ -109,6 +109,9 @@ const aliceInit2pc = (subEmbeddingIdx: number) => {
     //         aliceInputs[`vectorA_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
     //     }
     // }
+    // for(let i = 0; i < numDimensionsToDot; i++){
+    //     aliceInputs[`vectorC_${i}`] = subEmbedding.isPositive[i]
+    // }
 
     const aliceInputLabels = Object.entries(aliceInputs).reduce(
     (inputs: NamedLabel, [name, value]) => {
@@ -170,6 +173,9 @@ const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx: number) => {
     //     for(let bit = 0; bit < 4; bit++) {
     //         bobInputs[`vectorB_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
     //     }
+    // }
+    // for(let i = 0; i < numDimensionsToDot; i++){
+    //     bobInputs[`vectorD_${i}`] = subEmbedding.isPositive[i]
     // }
 
     const bobVKVals: BobVKVals = {}
@@ -258,12 +264,12 @@ const quantizeTo4Bits = (value: number): number => {
   }
 
 interface QuantizedInput {
-    isPositive: boolean[],
+    isPositive: number[],
     quantized: number[]
 }
 
 const quantizeVector = (embedding:number[]): QuantizedInput => {
-    const isPositive = embedding.map((x) => x > 0 ? true : false)
+    const isPositive = embedding.map((x) => x > 0 ? 1 : 0)
     const quantized = embedding.map(quantizeTo4Bits)
 
     return {
