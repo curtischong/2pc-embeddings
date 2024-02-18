@@ -144,6 +144,7 @@ const aliceInit2pc = (subEmbeddingIdx: number, sendMessage: SendMessage) => {
         }
     }
 
+    toStorage("labelledCircuit", labelledCircuit)
     toStorage("aliceOtInputs", aliceOtInputs)
     toStorage("subEmbeddingIdx", subEmbeddingIdx)
 
@@ -262,7 +263,7 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: SendMessage) => {
 // to a 1 or a 0
 // This is why we need to do one extra step to resolve the output labels. We can avoid this if Alice sends the output labels to bob at the start.
 const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
-    const labelledCircuit: Labels = // TODO:
+    const labelledCircuit = fromStorage("labelledCircuit") as Labels
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
@@ -354,7 +355,7 @@ const sendToBob = (jsonObj: any, messageType: MessageType, sendMessage: SendMess
 }
 
 const clearStorage = () => {
-    const savedToStorage = ["aliceOtInputs", "subEmbeddingIdx", "bobOtInputs", "bobVKVals"]
+    const savedToStorage = ["labelledCircuit", "aliceOtInputs", "subEmbeddingIdx", "garbledCircuit", "bobOtInputs", "aliceInputLabels", "bobVKVals", "bobInputs"]
     for(const key of savedToStorage){
         localStorage.removeItem(key)
     }
