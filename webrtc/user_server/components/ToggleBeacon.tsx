@@ -31,6 +31,8 @@ const sendMessage = (message: any, messageType: MessageType) => {
             ...message,
             "2pc": true,
             messageType,
+            // uuid: message.uuid,
+            // target_uuid: message.target_uuid
         }
     }));
 }
@@ -48,7 +50,7 @@ export default function ToggleBeacon() {
         localStorage.setItem('uuid', uuid);
       }
       console.log(uuid);
-    })
+    }) // DO NOT add ,[]. uuid will NOT be set
 
         
     ws.onmessage = function(event) {
@@ -71,8 +73,22 @@ export default function ToggleBeacon() {
         }
 
         if('2pc' in message){
-            const aliceUUID = message.uuid
-            const bobUUID = message.target_uuid
+            console.log('2pc message', message)
+            const messageType = message.messageType
+            let aliceUUID = "ERROR - hsould be filled";
+            let bobUUID = "ERROR - hsould be filled";
+            if(messageType == MessageType.AliceInit2pc){
+                localStorage.setItem('aliceUUID', message.uuid)
+                localStorage.setItem('bobUUID', message.target_uuid)
+                aliceUUID = message.uuid
+                bobUUID = message.target_uuid
+            }else{
+                aliceUUID = localStorage.getItem('aliceUUID')
+                bobUUID = localStorage.getItem('bobUUID')
+            }
+            console.log("aliceUUID", aliceUUID)
+            console.log("bobUUID", bobUUID)
+
             const sendBobMessage = (message: any, messageType: MessageType) => {
                 console.log("sending to bob", aliceUUID, bobUUID)
                 sendMessage({
@@ -90,9 +106,12 @@ export default function ToggleBeacon() {
                 },messageType)
             }
 
-            const messageType = message.messageType
+            // console.log("messageType", messageType)
             switch (messageType) {
             case MessageType.AliceInit2pc:
+                localStorage.setItem('bobUUID', message.target_uuid)
+                localStorage.setItem('aliceUUID', message.uuid)
+
                 // setCurrentPerson('Bob')
                 bobReceive2pc(message.garbledCircuit, message.bobOtInputs, message.aliceInputLabels, message.subEmbeddingIdx, sendAliceMessage)
                 break;
@@ -168,6 +187,8 @@ export default function ToggleBeacon() {
         // }));
         
         aliceInit2pc(0, (message:any, messageType:MessageType) => {
+            localStorage.setItem('bobUUID', target_uuid)
+            localStorage.setItem('aliceUUID', uuid as string)
             sendMessage({ // we are alice sending to bob
                 ...message,
                 uuid: uuid,
