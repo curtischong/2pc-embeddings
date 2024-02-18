@@ -52,7 +52,7 @@ export default function ToggleBeacon() {
 
         
     ws.onmessage = function(event) {
-        console.log(event.data);
+        // console.log(event.data);
         // console.log(JSON.parse(event.data));
 
         let message = null;
@@ -74,6 +74,7 @@ export default function ToggleBeacon() {
             const aliceUUID = message.uuid
             const bobUUID = message.target_uuid
             const sendBobMessage = (message: any, messageType: MessageType) => {
+                console.log("sending to bob", aliceUUID, bobUUID)
                 sendMessage({
                     ...message,
                     uuid: aliceUUID,
@@ -81,6 +82,7 @@ export default function ToggleBeacon() {
                 }, messageType)
             }
             const sendAliceMessage = (message: any, messageType: MessageType) => {
+                console.log("sending to alice", aliceUUID, bobUUID)
                 sendMessage({
                     ...message,
                     uuid: bobUUID,
@@ -89,7 +91,6 @@ export default function ToggleBeacon() {
             }
 
             const messageType = message.messageType
-            console.log(messageType)
             switch (messageType) {
             case MessageType.AliceInit2pc:
                 // setCurrentPerson('Bob')
@@ -115,6 +116,7 @@ export default function ToggleBeacon() {
     };
 
     ws.onopen = function(event) {
+        console.log("onopen")
         if (beaconActive)
         ws.send(JSON.stringify({
             uuid: uuid,
@@ -123,6 +125,7 @@ export default function ToggleBeacon() {
     }
 
     ws.onclose = function(event) {
+        console.log("onclose")
         ws.send(JSON.stringify({
             uuid: uuid,
             message: 'disconnect'

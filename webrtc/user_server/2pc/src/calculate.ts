@@ -115,8 +115,6 @@ function ot_alice2(
 ): mVals {
   // ALICE
   // const { m0k, m1k } = 
-  console.log("bobV", bobV)
-  console.log("aliceOTVals", aliceOTVals)
   return ot.otSend2(aliceOTVals.d, aliceOTVals.N, aliceOTVals.x0, aliceOTVals.x1, bobV, aliceOTVals.m0, aliceOTVals.m1);
 }
 
@@ -212,6 +210,7 @@ interface AliceVVals{
 }
 
 const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, aliceInputLabels: NamedLabel, subEmbeddingIdx: number, sendMessage: any) => {
+    clearStorage();
     console.log("bobReceive2pc")
     toStorage("garbledCircuit", garbledCircuit)
     toStorage("bobOtInputs", bobOtInputs)
@@ -240,12 +239,12 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     for(let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
         const { v, k } = ot_bob1(bobInputs[inputName], bobOtInputs[inputName]);
-        console.log("v", v, "k", k)
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
     }
     toStorage("bobVKVals", bobVKVals)
     toStorage("bobInputs", bobInputs)
+    console.log("bobInputs_yay", bobInputs)
     // TODO: save to localStorage: aliceVVals
     sendMessage({
         aliceVVals,
@@ -267,9 +266,9 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: any) => {
     for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
         // const { m0k, m1k } = ot_alice2(bobV, aliceOtVals);
         // we need to send this back to bob: const { m0k, m1k } = 
-        console.log("aliceVVals", aliceVVals, "inputName", inputName)
         bobMVals[inputName] = ot_alice2(aliceVVals[inputName], aliceOtVals)
     }
+    console.log("sending message to BOB", sendMessage)
     sendMessage({
         bobMVals
     }, MessageType.AliceReceiveVFromBob)
@@ -282,12 +281,16 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
     const bobOTInputs = fromStorage("bobOTInputs") as BobOTInputs
     const garbledCircuit = fromStorage("garbledCircuit") as GarbledTable[]
     const aliceInputLabels = fromStorage("aliceInputLabels") as NamedLabel
+    console.log("bobInputs", bobInputs)
+    console.log("bobVKVals", bobVKVals)
+    console.log("bobOTInputs", bobOTInputs)
+    console.log("garbledCircuit", garbledCircuit)
+    console.log("aliceInputLabels", aliceInputLabels)
 
     const bobInputLabels:NamedLabel = {}
     for(let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
         const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
-        console.log("m", m)
         bobInputLabels[inputName] = m
     }
 

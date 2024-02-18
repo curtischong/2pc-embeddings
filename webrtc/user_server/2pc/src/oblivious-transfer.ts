@@ -61,7 +61,6 @@ export function otSend2(
   v = BigInt(v);
   m0 = Buffer.from(m0);
   m1 = Buffer.from(m1);
-  console.log(m0)
 
   const k0 = modpow(v - x0, d, N);
   const k1 = modpow(v - x1, d, N);
