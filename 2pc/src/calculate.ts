@@ -1,10 +1,8 @@
 import { generateKeyPairSync } from "crypto";
-import fs from "fs";
-import path from "path";
 import * as ot from "./oblivious-transfer";
 import { getJwkInt, getNthBit } from "./utils";
 import { InputValue } from "./circuit/gates";
-import { garbleCircuit, Labels, NamedLabel } from "./circuit/garble";
+import { Circuit, garbleCircuit, GarbledTable, Labels, NamedLabel } from "./circuit/garble";
 import {
   evalGarbledCircuit,
   resolveOutputLabels,
@@ -49,70 +47,77 @@ function doObliviousTransfer(
   return m.toString("utf-8");
 }
 
-const [, , verilogFile] = process.argv;
+// const { circuit, outputNames } = parseVerilog("../verilog/dotproduct/out.v");
+const { circuit, outputNames } = parseVerilog("../verilog/millionaire/out.v");
 
-// Both parties are aware of circuit configuration
-const verilog = fs.readFileSync(path.resolve(verilogFile), "utf-8");
-const { circuit, outputNames } = parseVerilog(verilog);
-
-// ALICE
-const {
-  labelledCircuit,
-  garbledCircuit, // -> Alice will send to Bob
-} = garbleCircuit(circuit);
-// TODO(Curtis): send via bluetooth
-
-const aliceWealth = 2e6;
-const aliceInputs: NamedInputOutput = {};
-for (let i = 0; i < 32; i++) {
-  aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
-}
-
-const aliceInputLabels = Object.entries(aliceInputs).reduce(
-  (inputs: NamedLabel, [name, value]) => {
-    inputs[name] = labelledCircuit[name][value];
-    return inputs;
-  },
-  {},
-);
-
-console.log(`alice inputs -> ${JSON.stringify(aliceInputs)}`);
-console.log(`alice input labels -> ${JSON.stringify(aliceInputLabels)}`);
-
-// BOB
-const bobWealth = 1e6;
-const bobInputs: NamedInputOutput = {};
-for (let i = 0; i < 32; i++) {
-  bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
-}
-
-const bobInputLabels = Object.entries(bobInputs).reduce(
-  (inputs: NamedLabel, [name, value]) => {
+const aliceInit2pc = () => {
+    // ALICE
+    const {
+    labelledCircuit,
+    garbledCircuit, // -> Alice will send to Bob
+    } = garbleCircuit(circuit);
     // TODO(Curtis): send via bluetooth
-    inputs[name] = doObliviousTransfer(labelledCircuit, name, value);
-    return inputs;
-  },
-  {},
-);
 
-console.log(`bob inputs -> ${JSON.stringify(bobInputs)}`);
-console.log(`bob input labels -> ${JSON.stringify(bobInputLabels)}`);
+    const aliceWealth = 2e6;
+    const aliceInputs: NamedInputOutput = {};
+    for (let i = 0; i < 32; i++) {
+    aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
+    }
 
-// garbledCircuit and aliceInputLabels received from Alice
-// bobInputLabels received from Alice via oblivious transfer
-const outputLabels = evalGarbledCircuit(
-  garbledCircuit,
-  { ...aliceInputLabels, ...bobInputLabels },
-  circuit,
-); // -> Bob will send to Alice
-// TODO(Curtis): send via bluetooth
+    const aliceInputLabels = Object.entries(aliceInputs).reduce(
+    (inputs: NamedLabel, [name, value]) => {
+        inputs[name] = labelledCircuit[name][value];
+        return inputs;
+    },
+    {},
+    );
 
-console.log("output labels ->", JSON.stringify(outputLabels));
+    console.log(`alice inputs -> ${JSON.stringify(aliceInputs)}`);
+    console.log(`alice input labels -> ${JSON.stringify(aliceInputLabels)}`);
+}
 
-// ALICE
-const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
-console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
-// TODO(Curtis): send via bluetooth
+const receive2pcReq = (labelledCircuit: Labels, aliceInputLabels: NamedLabel, garbledCircuit: GarbledTable[]) => {
+    // BOB
+    const bobWealth = 1e6;
+    const bobInputs: NamedInputOutput = {};
+    for (let i = 0; i < 32; i++) {
+    bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
+    }
+
+    const bobInputLabels = Object.entries(bobInputs).reduce(
+    (inputs: NamedLabel, [name, value]) => {
+        // TODO(Curtis): send via bluetooth
+        inputs[name] = doObliviousTransfer(labelledCircuit, name, value);
+        return inputs;
+    },
+    {},
+    );
+
+    console.log(`bob inputs -> ${JSON.stringify(bobInputs)}`);
+    console.log(`bob input labels -> ${JSON.stringify(bobInputLabels)}`);
+
+    // garbledCircuit and aliceInputLabels received from Alice
+    // bobInputLabels received from Alice via oblivious transfer
+    const outputLabels = evalGarbledCircuit(
+    garbledCircuit,
+    { ...aliceInputLabels, ...bobInputLabels },
+    circuit,
+    ); // -> Bob will send to Alice
+    // TODO(Curtis): send via bluetooth
+    console.log("output labels ->", JSON.stringify(outputLabels));
+}
+
+// the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
+// to a 1 or a 0
+// This is why we need to do one extra step to resolve the output labels. We can avoid this if Alice sends the output labels to bob at the start.
+const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
+    // ALICE
+    const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
+    console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
+    // TODO(Curtis): send via bluetooth
+}
+
+
 
 // 1) alice sends circuits
 // 2) bob asks Alice for the labels corresponding to her input, and he uses a protocol called "1-of-2 oblivious transfer"
