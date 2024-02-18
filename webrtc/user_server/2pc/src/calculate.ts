@@ -330,7 +330,7 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
 // the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
 // to a 1 or a 0
 // This is why we need to do one extra step to resolve the output labels. We can avoid this if Alice sends the output labels to bob at the start.
-const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
+const aliceCalcFinalSum = (outputLabels: NamedLabel, sendMessage: any) => {
     console.log("aliceCalcFinalSum")
     const labelledCircuit = fromStorage("labelledCircuit") as Labels
     // ALICE
@@ -342,7 +342,13 @@ const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
     }
     const ans = twosComplementToNumber(finalNum)
     console.log('ans', ans)
-    return ans
+    const subEmbeddingIdx = fromStorage("subEmbeddingIdx")
+    toStorage(`finalSum${subEmbeddingIdx}`, ans)
+
+    const numSubEmbeddings = fromStorage(`numSubEmbeddings`)
+    if(subEmbeddingIdx === numSubEmbeddings -1){
+        sumAllSubEmbeddings(sendMessage)
+    }
 }
 
 
@@ -378,13 +384,6 @@ const quantizeVector = (embedding:number[]): QuantizedInput => {
     }
 }
 
-const calculateDotProduct = (subEmbeddingIdx:number, sendMessage:any):number => {
-    // TODO: init 2PC
-    aliceInit2pc(subEmbeddingIdx, sendMessage);
-    // TODO: return a value one all of the embeddings is finished
-    return 0
-}
-
 const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
     const embedding = fromStorage("embedding") as number[]
     // pad embedding to be a multiple of numDimensionsToDot
@@ -394,21 +393,29 @@ const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
     return quantizeVector(subEmbedding)
 }
 
+const sumAllSubEmbeddings = (sendMessage:any) => {
+    let totalDotProduct = 0
+    const numSubEmbeddings = fromStorage(`numSubEmbeddings`)
+    for(let i = 0; i < numSubEmbeddings; i++){
+        const segmentSum = fromStorage(`finalSum${i}`)
+        totalDotProduct += segmentSum;
+    }
+    console.log("totalDotProduct", totalDotProduct)
+    sendMessage({totalDotProduct}, MessageType.AliceComputeDotProduct)
+    // TODO: call client somehow
+}
+
 // TODO: figure this out
 const aliceComputeDotProduct = (sendMessage: any) => {
     const embedding = fromStorage("embedding") as number[]
     // pad embedding to be a multiple of numDimensionsToDot
     const paddedEmbeddingLen = embedding.length + (numDimensionsToDot - (embedding.length % numDimensionsToDot))
     const numSubEmbeddings = paddedEmbeddingLen / numDimensionsToDot
+    toStorage(`numSubEmbeddings`, numSubEmbeddings)
 
-    let totalDotProduct = 0
     for(let subEmbeddingIdx = 0; subEmbeddingIdx < numSubEmbeddings; subEmbeddingIdx++){
-        const embeddingDotProduct = calculateDotProduct(subEmbeddingIdx, sendMessage);
-        totalDotProduct += embeddingDotProduct;
+        aliceInit2pc(subEmbeddingIdx, sendMessage);
     }
-
-    sendMessage({totalDotProduct}, MessageType.AliceComputeDotProduct)
-    return totalDotProduct;
 }
 
 

@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import Head from 'next/head';
 import { useCallback, useEffect, useState } from 'react';
 import { MessageType } from '../types';
-import { aliceCalcFinalSum, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
+import { aliceCalcFinalSum, aliceComputeDotProduct, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 import { Message } from 'postcss';
 import Link from 'next/link';
 
@@ -123,7 +123,7 @@ export default function ToggleBeacon() {
                     break;
                 case MessageType.BobResolveInputs:
                     // TODO: use embeddings
-                    aliceCalcFinalSum(message.outputLabels)
+                    aliceCalcFinalSum(message.outputLabels, sendBobMessage)
                     break;
                 case MessageType.AliceComputeDotProduct:
                     console.log('Alice computed dot product:', message.totalDotProduct)
@@ -186,8 +186,8 @@ export default function ToggleBeacon() {
         //     uuid: uuid,
         //     message: 'share ' + target_uuid
         // }));
-
-        aliceInit2pc(0, (message: any, messageType: MessageType) => {
+        
+        aliceComputeDotProduct((message:any, messageType:MessageType) => {
             localStorage.setItem('bobUUID', target_uuid)
             localStorage.setItem('aliceUUID', uuid as string)
             sendMessage({ // we are alice sending to bob
