@@ -10,14 +10,30 @@ import {
 } from "./circuit/evaluate";
 import { parseVerilog } from "./verilog";
 
-// In practice this would be multiple steps as only Alice knows labelledCircuit
-// and only Bob knows his input
-function doObliviousTransfer(
-  labelledCircuit: Labels, // Alice
-  inputName: string, // Bob
-  inputValue: InputValue, // Bob
-) {
-  console.log(`oblivious transfer -> value:${inputName}=${inputValue}`);
+type AliceOTVals = {
+    e: bigint,
+    N: bigint,
+    d: bigint,
+    x0: bigint,
+    x1: bigint,
+    m0: Buffer,
+    m1: Buffer
+}
+
+type BobOTVals = {
+    e: bigint,
+    N: bigint,
+    x0: bigint,
+    x1: bigint,
+}
+
+type AliceOTInputs = { [key: string]: AliceOTVals };
+type BobOTInputs = { [key: string]: BobOTVals };
+function ot_alice1(
+    inputName: string,
+    labelledCircuit: Labels, // Alice
+):AliceOTVals {
+//   console.log(`oblivious transfer -> value:${inputName}=${inputValue}`);
 
   // ALICE
   const { publicKey, privateKey } = generateKeyPairSync("rsa", {
@@ -35,17 +51,39 @@ function doObliviousTransfer(
   const d = getJwkInt(privkey.d as string);
 
   const { x0, x1 } = ot.otSend1();
+  return {
+        e, N, d, x0, x1, m0, m1
+  }
+}
 
+function ot_bob1(
+    inputValue: InputValue,
+    bobOTVals: BobOTVals,
+) {
   // BOB
-  const { v, k } = ot.otRecv1(inputValue, e, N, x0, x1);
+  return ot.otRecv1(inputValue, bobOTVals.e, bobOTVals.N, bobOTVals.x0, bobOTVals.x1);
+}
 
+function ot_alice2(
+    bobV: bigint,
+    aliceOTVals: AliceOTVals,
+) {
   // ALICE
-  const { m0k, m1k } = ot.otSend2(d, N, x0, x1, v, m0, m1);
+  // const { m0k, m1k } = 
+  return ot.otSend2(aliceOTVals.d, aliceOTVals.N, aliceOTVals.x0, aliceOTVals.x1, bobV, aliceOTVals.m0, aliceOTVals.m1);
+}
 
+function ot_bob2(
+    inputValue: InputValue, 
+    bobOTVals: BobOTVals,
+    bobOTK: bigint,
+    mVals: mVals
+) {
   // BOB
-  const m = ot.otRecv2(inputValue, N, k, m0k, m1k);
+  const m = ot.otRecv2(inputValue, bobOTVals.N, bobOTK, mVals.m0k, mVals.m1k);
   return m.toString("utf-8");
 }
+
 
 // const { circuit, outputNames } = parseVerilog("../verilog/dotproduct/out.v");
 const { circuit, outputNames } = parseVerilog("../verilog/millionaire/out.v");
@@ -74,24 +112,92 @@ const aliceInit2pc = () => {
 
     console.log(`alice inputs -> ${JSON.stringify(aliceInputs)}`);
     console.log(`alice input labels -> ${JSON.stringify(aliceInputLabels)}`);
+
+    const aliceOtInputs: AliceOTInputs = {}
+    const bobOtInputs: BobOTInputs = {} // same as AliceOTInputs, but we hide the m0 and m1 values
+    // alice starts the OT for all the inputs that bob needs.
+    // we already know that bob needs these inputs. so just send it in the starting packet.
+    for (let i = 0; i < 32; i++) {
+        const inputName = `B_${i}`
+        const aliceOtVals = ot_alice1(inputName, labelledCircuit);
+        aliceOtInputs[inputName] = aliceOtVals
+
+        bobOtInputs[inputName] = {
+            e: aliceOtVals.e,
+            N: aliceOtVals.N,
+            x0: aliceOtVals.x0,
+            x1: aliceOtVals.x1,
+        }
+    }
+
+    // send the OT data to bob
+    // send(garbledCircuit, bobOtInputs)
 }
 
-const receive2pcReq = (labelledCircuit: Labels, aliceInputLabels: NamedLabel, garbledCircuit: GarbledTable[]) => {
+const bobReceive2pc = (ot_bob_input: BobOTInputs, garbledCircuit: GarbledTable[]) => {
     // BOB
     const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
     for (let i = 0; i < 32; i++) {
-    bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
+        bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
     }
+
+    const bobVals:any = {}
+    const aliceVals:any = {}
 
     const bobInputLabels = Object.entries(bobInputs).reduce(
     (inputs: NamedLabel, [name, value]) => {
         // TODO(Curtis): send via bluetooth
-        inputs[name] = doObliviousTransfer(labelledCircuit, name, value);
+        // ask alice for the labels corresponding to name.
+
+        //then bob assigns it based on his value
+        const { v, k } = ot_bob1(value, ot_bob_input[name]);
+        bobVals[name] = { v, k }
+        aliceVals[name] = v
+
+        inputs[name] = doObliviousTransfer(name, value);
         return inputs;
     },
     {},
     );
+}
+
+interface mVals {
+    m0k: bigint,
+    m1k: bigint
+}
+interface BobMVals {
+    [bobInputName: string]: mVals
+}
+
+const aliceReceiveVFromBob = (bobV:bigint, aliceOtInputs:AliceOTInputs) => {
+    const bobMVals: BobMVals = {}
+    for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
+        // const { m0k, m1k } = ot_alice2(bobV, aliceOtVals);
+        // we need to send this back to bob: const { m0k, m1k } = 
+        bobMVals[inputName] = ot_alice2(bobV, aliceOtVals)
+    }
+    // send(mForBob)
+}
+
+const bobResolveInputs = (bobMVals: BobMVals) => {
+
+    const bobInputLabels = Object.entries(bobInputs).reduce(
+        (inputs: NamedLabel, [name, value]) => {
+            // TODO(Curtis): send via bluetooth
+            // ask alice for the labels corresponding to name.
+    
+            //then bob assigns it based on his value
+            const { v, k } = ot_bob2(value, ot_bob_input[name]);
+            bobVals[name] = { v, k }
+            aliceVals[name] = v
+    
+            inputs[name] = doObliviousTransfer(name, value);
+            return inputs;
+        },
+        {},
+    );
+
 
     console.log(`bob inputs -> ${JSON.stringify(bobInputs)}`);
     console.log(`bob input labels -> ${JSON.stringify(bobInputLabels)}`);
