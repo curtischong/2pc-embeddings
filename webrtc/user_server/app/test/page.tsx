@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useCallback, useEffect } from 'react';
-import {WebSocketDemo} from '../components/WebRTC';
-import  { aliceComputeDotProduct, aliceInit2pc, aliceReceiveVFromBob } from '../2pc/src/calculate';
+import {WebSocketDemo} from '../../components/WebRTC';
+import  { aliceComputeDotProduct, aliceInit2pc, aliceReceiveVFromBob } from '../../2pc/src/calculate';
 
 
 
