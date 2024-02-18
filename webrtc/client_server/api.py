@@ -39,6 +39,8 @@ connected_devices: dict = {}
 class WSResponse(BaseModel):
     uuid: str
     message: str
+    data: dict = None
+    target_uuid: str = ''
 
 async def share_embedding(new_uuid: str):
     new_device = connected_devices[new_uuid]
@@ -106,6 +108,9 @@ async def websocket_endpoint(websocket: WebSocket):
             elif data.message.startswith('share'):
                 other_uuid = data.message[6:]
                 await share_one(data.uuid, other_uuid)
+            elif data.message == 'send':
+                try: connected_devices[data.target_uuid].websocket.send_text(json.dumps(data.data))
+                except: pass
 
     except Exception as e:
         print(e, e.__dict__)
