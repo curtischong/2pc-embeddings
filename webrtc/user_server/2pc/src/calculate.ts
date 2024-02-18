@@ -1,5 +1,5 @@
 import * as ot from "./oblivious-transfer";
-import { base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit, verifyRSA } from "./utils";
+import { base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit, twosComplementToNumber, verifyRSA } from "./utils";
 import { InputValue } from "./circuit/gates";
 import { Circuit, garbleCircuit, GarbledTable, Labels, NamedLabel } from "./circuit/garble";
 import { MessageType } from "../../types"
@@ -315,18 +315,22 @@ const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
 
 
+    // by inspection of the diagram, result_0 is the least significant bit
+
     // let numOutputs = 12
     // // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
     // let finalSum = 0 
     // for(let i = 0; i < numOutputs; i++){
-    //     const isPositive = outputs[`xorResult_${i}`]
-    //     let indexSum = 0;
 //         const jthBit = outputs[`result_${i}`]
-//         indexSum += jthBit * (2**j)
-    //     const scaledSum = indexSum / 15
-    //     finalSum += isPositive ? scaledSum : -scaledSum
+//         const finalSum = finalSum + (jthBit << i)
     // }
     // return finalSum
+
+    // let binaryBits = ""
+    // for(let i = 0; i < numOutputs; i++){
+    //     binaryBits = outputs[`result_${i}`] + binaryBits
+    // }
+    // return twosComplementToNumber(binaryBits)
 }
 
 

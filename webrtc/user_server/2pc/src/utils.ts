@@ -128,3 +128,23 @@ function modPow(base, exponent, modulus) {
   }
   return result;
 }
+
+export function twosComplementToNumber(binStr: string): number {
+  // Check if the number is negative (if the first bit is 1)
+  const isNegative = binStr[0] === '1';
+
+  let result: number;
+  if (isNegative) {
+      // Invert the bits
+      const invertedBits = binStr.split('').map(bit => bit === '0' ? '1' : '0').join('');
+      // Add 1 to the inverted bits to complete the two's complement conversion
+      result = parseInt(invertedBits, 2) + 1;
+      // Convert to negative
+      result = -result;
+  } else {
+      // If the number is positive, just convert it directly
+      result = parseInt(binStr, 2);
+  }
+
+  return result;
+}
