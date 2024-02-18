@@ -11,17 +11,35 @@ function generateUuidV4() {
         return v.toString(16);
     });
 }
-  
-const uuid = generateUuidV4();
+
+const ws = new WebSocket("ws://" + SERVER_IP + ":8000/ws");
 
 export default function ToggleBeacon() {
     const [beaconActive, setBeaconActive] = useState(false);
+    const [knownUUIDS, setKnownUUIDS] = useState([]);
 
+    let uuid: string | null;
 
-    var ws = new WebSocket("ws://" + SERVER_IP + ":8000/ws");
+    useEffect(() => {
+        uuid = localStorage.getItem('uuid');
+      if (!uuid) {
+        uuid = generateUuidV4();
+        localStorage.setItem('uuid', uuid);
+      }
+    })
+
+        
     ws.onmessage = function(event) {
         console.log(event.data);
         // console.log(JSON.parse(event.data));
+
+        try {
+            const json_data = JSON.parse(event.data);
+            if ('uuids' in json_data) {
+                setKnownUUIDS(json_data.uuids);
+            }
+        } catch {}
+        
     };
 
     const toggleBeacon = () => {
@@ -30,18 +48,27 @@ export default function ToggleBeacon() {
         // Beacon is Active -- UHH JANK
         if (!beaconActive) {
             console.log('connect');
+            if (ws)
             ws.send(JSON.stringify({
                 uuid: uuid,
                 message: 'connect'
             }));
         } else {
             console.log('disconnect');
+            if (ws)
             ws.send(JSON.stringify({
                 uuid: uuid,
                 message: 'disconnect'
             }));
         }
     };
+
+    const connectWithOther = (target_uuid: string) => {
+        ws.send(JSON.stringify({
+            uuid: uuid,
+            message: 'share ' + target_uuid
+        }));
+    }
 
 
     return (
@@ -61,6 +88,16 @@ export default function ToggleBeacon() {
             >
                 {beaconActive ? 'Deactivate Beacon' : 'Activate Beacon'}
             </button>
+
+            {beaconActive && knownUUIDS.map((uuid, index) => (
+                <button
+                    key={uuid}
+                    className={`flex items-center justify-center flex-1 py-2 px-4 text-sm font-medium leading-5 text-blue-700 rounded-lg`}
+                    onClick={() => connectWithOther(uuid)}
+                >
+                    Connect with {uuid}
+                </button>
+            ))}
         </div>
     );
 }
