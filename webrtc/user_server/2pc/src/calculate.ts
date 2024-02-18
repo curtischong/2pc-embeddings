@@ -291,6 +291,7 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
     for(let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
         const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
+        console.log("m", m)
         bobInputLabels[inputName] = m
     }
 

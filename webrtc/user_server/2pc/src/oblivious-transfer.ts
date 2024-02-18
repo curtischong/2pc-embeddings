@@ -98,5 +98,8 @@ export function otRecv2(
   m1k: bigint,
 ): Buffer {
   const mb = [m0k, m1k][b];
-  return bigIntToBuffer(mod(mb - k, N));
+  // console.log("mb", mb);
+  // console.log("k", k);
+  // console.log("N", N);
+  return bigIntToBuffer(mod(BigInt(mb) - BigInt(k), BigInt(N)));
 }
