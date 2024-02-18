@@ -1,10 +1,11 @@
+import { MessageType } from '@/types';
 import React, { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { MessageType } from '../types';
 import { aliceCalcFinalSum, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 
 
-export const WebSocketDemo = ({currentPerson, setCurrentPerson}) => {
+export const WebSocketDemo = ({currentPerson, setCurrentPerson,  setProfile}) => {
   //Public API that will echo messages sent to it back to the client
   const [socketUrl, setSocketUrl] = useState('ws://localhost:8080');
   const [messageHistory, setMessageHistory] = useState([]);
@@ -60,13 +61,34 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson}) => {
     });
   }
 
+  const clearProfile = useCallback(() => {
+    setCurrentPerson('')
+    setProfile('')
+    localStorage.removeItem('profile')
+    setMessageHistory([])
+    // Clears the conversation on receiver end
+    sendMessage(MessageType.EndConversation);
+  }, []);
+  
+  
   const [textMessages, setTextMessages] = useState([])
   useEffect(() => {
     // Your asynchronous operations to convert Blobs to text
     const convertBlobsToText = async () => {
       const textMessages = await Promise.all(messageHistory.map(async (message, idx) => {
         if (message) {
-          return await blobToText(message.data);
+          message = await blobToText(message.data);
+
+          if (message === MessageType.EndConversation) {
+            clearProfile()
+          }
+
+          if (currentPerson === '' && message !== MessageType.EndConversation) {
+            setCurrentPerson('Bob')
+          }
+
+
+          return message 
         }
         return null;
       }));
@@ -82,11 +104,14 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson}) => {
 
   const handleClickSendMessage = useCallback(() => {
     // Set default to 'Alice' if currentPerson is an empty string
-    const personToSendMessage = currentPerson || 'Alice';
-    sendMessage(`Hello ${personToSendMessage === 'Alice' ? 'Bob' : 'Alice'} from ${personToSendMessage}`);
+    if (currentPerson === '') {
+      setCurrentPerson('Alice')
+    }
+    sendMessage(`Hello ${currentPerson === 'Alice' ? 'Bob' : 'Alice'} from ${currentPerson}`);
+
   }, [currentPerson]);
-  
-  
+
+
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
     [ReadyState.OPEN]: 'Open',
@@ -111,6 +136,12 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson}) => {
                   text-white font-bold py-2 px-4 rounded`}
     >
       Click Me to send 'Hello'
+    </button>
+    <button 
+      onClick={clearProfile}
+      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+    >
+      Click Me to Clear Conversation
     </button>
     <span>The WebSocket is currently {connectionStatus}</span>
 
