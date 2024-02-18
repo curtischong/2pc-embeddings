@@ -5,7 +5,9 @@ import { useState } from 'react';
 import IconComponent from './TabIcon';
 
 import ToggleBeacon from './ToggleBeacon';
+import ToggleBeacon2 from './ToggleBeacon2';
 import { WebSocketDemo } from './WebRTC';
+import SwipeCards from './SwipeCards';
 
 export default function Tabs() {
     const [activeTab, setActiveTab] = useState('tab2');
@@ -13,7 +15,7 @@ export default function Tabs() {
     return (
         <div>
             <div className="p-4">
-                {activeTab === 'tab1' && <div>Content for Tab 1</div>}
+                {activeTab === 'tab1' && <ToggleBeacon2 />}
                 {activeTab === 'tab2' && <ToggleBeacon />}
                 {activeTab === 'tab3' && <WebSocketDemo currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} />}
             </div>
