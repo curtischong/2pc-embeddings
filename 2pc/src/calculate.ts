@@ -67,7 +67,7 @@ function ot_bob1(
 function ot_alice2(
     bobV: bigint,
     aliceOTVals: AliceOTVals,
-) {
+): mVals {
   // ALICE
   // const { m0k, m1k } = 
   return ot.otSend2(aliceOTVals.d, aliceOTVals.N, aliceOTVals.x0, aliceOTVals.x1, bobV, aliceOTVals.m0, aliceOTVals.m1);
@@ -76,11 +76,11 @@ function ot_alice2(
 function ot_bob2(
     inputValue: InputValue, 
     bobOTVals: BobOTVals,
-    bobOTK: bigint,
+    bobVK: BobVK,
     mVals: mVals
 ) {
   // BOB
-  const m = ot.otRecv2(inputValue, bobOTVals.N, bobOTK, mVals.m0k, mVals.m1k);
+  const m = ot.otRecv2(inputValue, bobOTVals.N, bobVK.k, mVals.m0k, mVals.m1k);
   return m.toString("utf-8");
 }
 
@@ -131,7 +131,20 @@ const aliceInit2pc = () => {
     }
 
     // send the OT data to bob
-    // send(garbledCircuit, bobOtInputs)
+    // send(garbledCircuit, bobOtInputs, aliceInputLabels)
+}
+
+interface BobVK {
+    v: bigint,
+    k: bigint
+}
+
+interface BobVKVals{
+    [inputName: string]: BobVK
+}
+
+interface AliceVVals{
+    [inputName: string]: bigint
 }
 
 const bobReceive2pc = (ot_bob_input: BobOTInputs, garbledCircuit: GarbledTable[]) => {
@@ -142,24 +155,16 @@ const bobReceive2pc = (ot_bob_input: BobOTInputs, garbledCircuit: GarbledTable[]
         bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
     }
 
-    const bobVals:any = {}
-    const aliceVals:any = {}
+    const bobVKVals: BobVKVals = {}
+    const aliceVVals: AliceVVals = {}
 
-    const bobInputLabels = Object.entries(bobInputs).reduce(
-    (inputs: NamedLabel, [name, value]) => {
-        // TODO(Curtis): send via bluetooth
-        // ask alice for the labels corresponding to name.
-
-        //then bob assigns it based on his value
-        const { v, k } = ot_bob1(value, ot_bob_input[name]);
-        bobVals[name] = { v, k }
-        aliceVals[name] = v
-
-        inputs[name] = doObliviousTransfer(name, value);
-        return inputs;
-    },
-    {},
-    );
+    for(let i = 0; i < 32; i++) {
+        const inputName = `B_${i}`
+        const { v, k } = ot_bob1(bobInputs[inputName], ot_bob_input[inputName]);
+        bobVKVals[inputName] = { v, k }
+        aliceVVals[inputName] = v
+    }
+    // sendToAlice(aliceVals)
 }
 
 interface mVals {
@@ -170,33 +175,47 @@ interface BobMVals {
     [bobInputName: string]: mVals
 }
 
-const aliceReceiveVFromBob = (bobV:bigint, aliceOtInputs:AliceOTInputs) => {
+const aliceReceiveVFromBob = (aliceVVals:AliceVVals, aliceOtInputs:AliceOTInputs) => {
     const bobMVals: BobMVals = {}
     for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
         // const { m0k, m1k } = ot_alice2(bobV, aliceOtVals);
         // we need to send this back to bob: const { m0k, m1k } = 
-        bobMVals[inputName] = ot_alice2(bobV, aliceOtVals)
+        bobMVals[inputName] = ot_alice2(aliceVVals[inputName], aliceOtVals)
     }
-    // send(mForBob)
+    // send(bobMVals)
 }
 
-const bobResolveInputs = (bobMVals: BobMVals) => {
+const bobResolveInputs = (bobMVals: BobMVals, bobInputs: NamedInputOutput,
+    bobOTInputs: BobOTInputs, bobVKVals: BobVKVals, garbledCircuit: GarbledTable[],
+    aliceInputLabels:NamedLabel) => {
 
-    const bobInputLabels = Object.entries(bobInputs).reduce(
-        (inputs: NamedLabel, [name, value]) => {
-            // TODO(Curtis): send via bluetooth
-            // ask alice for the labels corresponding to name.
+    const bobInputLabels:NamedLabel = {}
+    for(let i = 0; i < 32; i++) {
+        const inputName = `B_${i}`
+        // inputValue: InputValue, 
+        // bobOTK: bigint,
+        // mVals: mVals
+
+        const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
+        console.log("m", m)
+        bobInputLabels[inputName] = m
+    }
+
+    // const bobInputLabels = Object.entries(bobMVals).reduce(
+    //     (inputs: NamedLabel, [name, value]) => {
+    //         // TODO(Curtis): send via bluetooth
+    //         // ask alice for the labels corresponding to name.
     
-            //then bob assigns it based on his value
-            const { v, k } = ot_bob2(value, ot_bob_input[name]);
-            bobVals[name] = { v, k }
-            aliceVals[name] = v
+    //         //then bob assigns it based on his value
+    //         const { v, k } = ot_bob2(value, ot_bob_input[name]);
+    //         bobVals[name] = { v, k }
+    //         aliceVals[name] = v
     
-            inputs[name] = doObliviousTransfer(name, value);
-            return inputs;
-        },
-        {},
-    );
+    //         inputs[name] = doObliviousTransfer(name, value);
+    //         return inputs;
+    //     },
+    //     {},
+    // );
 
 
     console.log(`bob inputs -> ${JSON.stringify(bobInputs)}`);
@@ -209,8 +228,8 @@ const bobResolveInputs = (bobMVals: BobMVals) => {
     { ...aliceInputLabels, ...bobInputLabels },
     circuit,
     ); // -> Bob will send to Alice
-    // TODO(Curtis): send via bluetooth
     console.log("output labels ->", JSON.stringify(outputLabels));
+    // sendToAlice(outputLabels)
 }
 
 // the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
@@ -220,9 +239,8 @@ const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
-    // TODO(Curtis): send via bluetooth
+    // sendToBob(outputs)
 }
-
 
 
 // 1) alice sends circuits
