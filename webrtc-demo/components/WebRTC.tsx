@@ -4,15 +4,12 @@ import React, { useEffect, useRef, useState } from 'react';
 const WebRTC = () => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const peerConnection = useRef(null);
   const [messages, setMessages] = useState([]);
-  const [peerConnection, setPeerConnection] = useState(null);
-  const [dataChannel, setDataChannel] = useState(null);
+  const dataChannel = useRef(null);
   const [messageInput, setMessageInput] = useState('');
 
   const wsRef = useRef(null);
-
-
-  
 
 
   useEffect(() => {
@@ -47,24 +44,23 @@ const WebRTC = () => {
             console.log('Received text data:', event.data);
         }
     };
-  }, [peerConnection]);
+  }, []);
 
 
   function handleAnswer(answer) {
-    console.log('handling answer', peerConnection, answer)
-    if (peerConnection) {
+    console.log('handling answer', peerConnection.current, answer)
+    if (peerConnection.current) {
 
-        peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
     } else {
         console.log('not handling')
     }
 }
 
 function handleCandidate(candidate) {
-    console.log('handling candidate', peerConnection, candidate)
-    if (peerConnection && candidate) {
-
-        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    console.log('handling candidate', peerConnection.current, candidate)
+    if (peerConnection.current && candidate) {
+        peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
     } else {
         console.log('not candidate')
     }
@@ -75,7 +71,7 @@ function handleCandidate(candidate) {
     localVideoRef.current.srcObject = stream;
 
     const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-    setPeerConnection(pc);
+    peerConnection.current =  pc;
     console.log(' PEER CONNECTION SET', pc)
 
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -99,7 +95,7 @@ function handleCandidate(candidate) {
     };
 
     const dc = pc.createDataChannel("chat");
-    setDataChannel(dc);
+    dataChannel.current = dc;
 
     dc.onopen = () => console.log("Data Channel is open");
     dc.onmessage = (event) => {
@@ -127,19 +123,19 @@ function handleCandidate(candidate) {
   };
 
   const handleOffer = async (offer) => {
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
+    await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.current.createAnswer();
+    await peerConnection.current.setLocalDescription(answer);
     wsRef.current.send(JSON.stringify({ 'type': 'answer', 'answer': answer }));
   };
 
   const sendMessage = () => {
-    if (dataChannel && dataChannel.readyState === 'open') {
-      dataChannel.send(messageInput);
+    if (dataChannel.current.readyState === 'open') {
+      dataChannel.current.send(messageInput);
       displayMessage('You', messageInput);
       setMessageInput(''); // Clear the message input after sending
     } else { 
-        console.log('not connected')
+        console.log('not connected', dataChannel, dataChannel.current, dataChannel.current.readyState )
     }
   };
 
