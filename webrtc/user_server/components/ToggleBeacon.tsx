@@ -125,7 +125,7 @@ export default function ToggleBeacon() {
                     break;
                 case MessageType.AliceSumAllSubEmbeddings:
                     console.log('Alice computed dot product:', message.totalDotProduct)
-                    window.location.href = '/match';
+                    window.location.href = '/match?dotProduct=' + message.totalDotProduct.toString();
                     break;
                 default:
                     console.log("unhandled msgType", messageType)

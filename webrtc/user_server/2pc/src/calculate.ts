@@ -402,7 +402,7 @@ const sumAllSubEmbeddings = (sendMessage:any) => {
     }
     console.log("totalDotProduct", totalDotProduct)
     sendMessage({totalDotProduct}, MessageType.AliceSumAllSubEmbeddings)
-    window.location.href = '/match';
+    window.location.href = '/match?dotProduct=' + totalDotProduct.toString();
 }
 
 // TODO: figure this out
