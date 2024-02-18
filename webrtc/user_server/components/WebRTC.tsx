@@ -13,6 +13,10 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson,  setProfile}) =>
   const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
 
   useEffect(() => {
+    // TODO: move this
+    localstorage.setItem('embedding', [1,1,1,1,1,1,1,1,1,1])
+
+
     if (lastMessage !== null) {
       console.log('message received:', lastMessage , 'From', currentPerson)
       // keep alice as alice and bob as bob

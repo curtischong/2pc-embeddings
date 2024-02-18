@@ -317,13 +317,15 @@ const quantizeVector = (embedding:number[]): QuantizedInput => {
     }
 }
 
-const calculateDotProduct = (subEmbeddingIdx:number):number => {
+const calculateDotProduct = (subEmbeddingIdx:number, sendMessage:SendMessage):number => {
     // TODO: init 2PC
+    aliceInit2pc(subEmbeddingIdx, sendMessage);
+    // TODO: return a value one all of the embeddings is finished
     return 0
 }
 
 const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
-    const embedding = [1,2,3,4]
+    const embedding = fromStorage("embedding") as number[]
     // pad embedding to be a multiple of numDimensionsToDot
     const padding = new Array(numDimensionsToDot - (embedding.length % numDimensionsToDot)).fill(0)
     const paddedEmbedding = embedding.concat(padding)
@@ -331,15 +333,16 @@ const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
     return quantizeVector(subEmbedding)
 }
 
+// TODO: figure this out
 const aliceComputeDotProduct = (sendMessage: SendMessage) => {
-    const embedding = [1,2,3,4]
+    const embedding = fromStorage("embedding") as number[]
     // pad embedding to be a multiple of numDimensionsToDot
     const paddedEmbeddingLen = embedding.length + (numDimensionsToDot - (embedding.length % numDimensionsToDot))
     const numSubEmbeddings = paddedEmbeddingLen / numDimensionsToDot
 
     let totalDotProduct = 0
     for(let subEmbeddingIdx = 0; subEmbeddingIdx < numSubEmbeddings; subEmbeddingIdx++){
-        const embeddingDotProduct = calculateDotProduct(subEmbeddingIdx);
+        const embeddingDotProduct = calculateDotProduct(subEmbeddingIdx, sendMessage);
         totalDotProduct += embeddingDotProduct;
     }
 
