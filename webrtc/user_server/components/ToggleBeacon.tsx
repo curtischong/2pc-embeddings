@@ -22,6 +22,7 @@ const sendMessage = (message: any, messageType: MessageType) => {
     //     "2pc": true,
     //     messageType,
     // }));
+    console.log('sending message', message)
     ws.send(JSON.stringify({
         uuid: message.uuid,
         message: 'send',
@@ -161,8 +162,8 @@ export default function ToggleBeacon() {
         aliceInit2pc(0, (message:any, messageType:MessageType) => {
             sendMessage({ // we are alice sending to bob
                 ...message,
-                uuid,
-                target_uuid,
+                uuid: uuid,
+                target_uuid: target_uuid,
             }, messageType)
         });
         // ws.send(JSON.stringify({

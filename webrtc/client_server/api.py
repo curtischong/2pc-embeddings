@@ -109,7 +109,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 other_uuid = data.message[6:]
                 await share_one(data.uuid, other_uuid)
             elif data.message == 'send':
-                try: connected_devices[data.target_uuid].websocket.send_text(json.dumps(data.data))
+                print(data)
+                try: await connected_devices[data.target_uuid].websocket.send_text(json.dumps(data.data))
                 except: pass
 
     except Exception as e:
