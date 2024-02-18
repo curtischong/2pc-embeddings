@@ -56,8 +56,8 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
         default:
 
           blobToText(lastMessage.data).then(receivedMessage => {
-
-            if (receivedMessage === MessageType.EndConversation) {
+            console.log('wtf', receivedMessage, typeof (receivedMessage), receivedMessage == MessageType.EndConversation)
+            if (receivedMessage == MessageType.EndConversation) {
               setMessages([])
               setCurrentPerson('')
             } else {
@@ -82,9 +82,11 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
     }
     // TODO: add your message 
     const receivingPerson = currentPerson === 'Alice' ? 'Bob' : 'Alice'
-    const toSend = { 'sender': currentPerson, 'content': 'Hello' }
-    setMessages((prev) => [...prev, toSend]);
-    sendMessage(toSend.content);
+    const messageToSend = { 'sender': currentPerson, 'content': 'Hello' }
+
+    setMessages((prev) => [...prev, messageToSend]);
+
+    sendMessage(messageToSend.content);
 
   }, [currentPerson]);
 
@@ -98,9 +100,9 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
   }[readyState];
 
   const clearConversation = () => {
+    sendMessage(MessageType.EndConversation)
     setMessages([])
     setCurrentPerson('')
-    sendMessage(MessageType.EndConversation)
 
   }
 
