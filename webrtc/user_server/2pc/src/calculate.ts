@@ -9,6 +9,7 @@ import {
   NamedInputOutput,
 } from "./circuit/evaluate";
 import { parseVerilog } from "./verilog";
+import { circuitStr } from "./circuitStr";
 
 const numDimensionsToDot = 10
 type AliceOTVals = {
@@ -86,8 +87,7 @@ function ot_bob2(
 }
 
 
-// const { circuit, outputNames } = parseVerilog("../verilog/dotproduct/out.v");
-const { circuit, outputNames } = parseVerilog("2pc/verilog/millionaire/out.v");
+const { circuit, outputNames } = parseVerilog(circuitStr);
 
 const aliceInit2pc = (subEmbeddingIdx: number) => {
     // ALICE
