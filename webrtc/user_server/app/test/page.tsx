@@ -84,7 +84,6 @@ const Home = () => {
 
   // Initializing your profile gets your uuid and sends it to the server
   const getProfile = async () => {
-    try {
       const response = await fetch('http://localhost:8000/embeddings', {
         method: 'POST',
         headers: {
@@ -99,15 +98,12 @@ const Home = () => {
       });
 
       const data = await response.json();
-      const embedding = JSON.stringify(data)
+      console.log("data", data)
+      const embedding = JSON.stringify(data.embeddings)
       // setResponseText(embedding);
       setProfile(embedding)
       const userId = getOrCreateUserID();
       syncConversation()
-
-    } catch (error) {
-      console.error('Error:', error);
-    }
   };
 
   // Initialize state with the value from localStorage or a default value
