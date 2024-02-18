@@ -1,7 +1,9 @@
 // pages/index.js
 import { randomUUID } from 'crypto';
 import Head from 'next/head';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { MessageType } from '../types';
+import { aliceCalcFinalSum, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 
 const SERVER_IP = 'localhost';
 
@@ -19,13 +21,50 @@ export default function ToggleBeacon() {
 
 
     var ws = new WebSocket("ws://" + SERVER_IP + ":8000/ws");
-    ws.onmessage = function(event) {
-        console.log(event.data);
-        // console.log(JSON.parse(event.data));
-    };
+    // ws.onmessage = function(event) {
+    //     console.log(event.data);
+    //     // console.log(JSON.parse(event.data));
+    // };
+        ws.onmessage = function(event) {
+          const message = event.data;
+          // console.log(event.data);
+          // console.log(JSON.parse(event.data));
+    
+    
+          console.log('message received:', message)
+          // keep alice as alice and bob as bob
+          // const message = lastMessage as any
+    
+          const messageType = message.messageType
+          switch (messageType) {
+            case MessageType.AliceInit2pc:
+            //   setCurrentPerson('Bob')
+              bobReceive2pc(message.garbledCircuit, message.bobOtInputs, message.aliceInputLabels, message.subEmbeddingIdx, sendMessage)
+              break;
+            case MessageType.BobReceive2pc:
+              aliceReceiveVFromBob(message.aliceVVals, sendMessage)
+              break;
+            case MessageType.AliceReceiveVFromBob:
+              bobResolveInputs(message.bobVVals, sendMessage)
+              break;
+            case MessageType.BobResolveInputs:
+              aliceCalcFinalSum(message.outputLabels)
+              break;
+            case MessageType.AliceComputeDotProduct:
+              console.log('Alice computed dot product:', message.totalDotProduct)
+              break;
+            default:
+              console.error('Unknown message type:', messageType)
+              break;
+          }
+        }
+
+    const sendMessage = useCallback((message) => () => {
+        ws.send(JSON.stringify(message))
+    }, [ws]);
+    
 
     const toggleBeacon = () => {
-        setBeaconActive(!beaconActive);
 
         // Beacon is Active -- UHH JANK
         if (!beaconActive) {
@@ -34,6 +73,7 @@ export default function ToggleBeacon() {
                 uuid: uuid,
                 message: 'connect'
             }));
+            aliceInit2pc(0, sendMessage)
         } else {
             console.log('disconnect');
             ws.send(JSON.stringify({
@@ -41,7 +81,14 @@ export default function ToggleBeacon() {
                 message: 'disconnect'
             }));
         }
+        setBeaconActive(!beaconActive);
     };
+    localStorage.setItem('embedding', JSON.stringify([1,1,1,1,1,1,1,1,1,1]))
+
+
+    // return () => {
+    //   ws.close()
+    // }
 
 
     return (
