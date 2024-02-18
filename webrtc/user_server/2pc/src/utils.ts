@@ -37,3 +37,58 @@ export function getLeastSignificantBit(buffer: Buffer): Bit {
   const lastByte = buffer[buffer.byteLength - 1];
   return getNthBit(lastByte, 0) as Bit;
 }
+
+// function base64UrlToBase64(base64url:string) {
+//   // Replace URL-safe characters with their standard counterparts
+//   let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+//   // Add padding if necessary
+//   let paddingNeeded = (4 - (base64.length % 4)) % 4;
+//   base64 += "=".repeat(paddingNeeded);
+//   return base64;
+// }
+
+// export function base64ToBigInt(base64Str:string) {
+//   return getJwkInt(base64UrlToBase64(base64Str));
+// }
+
+// export function b64ToBn(b64) {
+//   var bin = atob(b64);
+//   var hex = [];
+
+//   bin.split('').forEach(function (ch) {
+//     var h = ch.charCodeAt(0).toString(16);
+//     if (h.length % 2) { h = '0' + h; }
+//     hex.push(h);
+//   });
+
+//   return BigInt('0x' + hex.join(''));
+// }
+
+
+// Helper function to decode base64url to base64
+function base64urlToBase64(base64url) {
+  // Replace URL-friendly characters with regular base64 characters
+  base64url = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  // Pad with equals signs to make the length a multiple of 4
+  while (base64url.length % 4) {
+    base64url += '=';
+  }
+  return base64url;
+}
+
+// Function to convert base64url-encoded string to a BigInt
+export function base64urlToBigInt(base64url) {
+  // Decode base64url to base64 then to binary string
+  const base64 = base64urlToBase64(base64url);
+  const binaryString = atob(base64);
+
+  // Convert binary string to a hexadecimal string
+  let hex = '';
+  for (let i = 0; i < binaryString.length; i++) {
+    const byteHex = binaryString.charCodeAt(i).toString(16).padStart(2, '0');
+    hex += byteHex;
+  }
+
+  // Convert hexadecimal string to BigInt
+  return BigInt(`0x${hex}`);
+}

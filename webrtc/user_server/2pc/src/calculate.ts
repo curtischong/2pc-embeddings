@@ -1,6 +1,5 @@
-import { generateKeyPairSync } from "crypto";
 import * as ot from "./oblivious-transfer";
-import { getJwkInt, getNthBit } from "./utils";
+import { b64ToBn, base64ToBigInt, base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit } from "./utils";
 import { InputValue } from "./circuit/gates";
 import { Circuit, garbleCircuit, GarbledTable, Labels, NamedLabel } from "./circuit/garble";
 import { MessageType } from "../../types"
@@ -33,26 +32,67 @@ type BobOTVals = {
 
 type AliceOTInputs = { [key: string]: AliceOTVals };
 type BobOTInputs = { [key: string]: BobOTVals };
-function ot_alice1(
+
+async function generateRsaKeyPair() {
+  const keyPair = await window.crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 2048, // Can be 1024, 2048, or 4096
+      publicExponent: new Uint8Array([1, 0, 1]), // 65537
+      hash: "SHA-256",
+    },
+    true, // whether the key is extractable (i.e., can be exported)
+    ["encrypt", "decrypt"]
+  );
+
+  const publicKey = await window.crypto.subtle.exportKey(
+    "jwk", // JSON Web Key format
+    keyPair.publicKey
+  );
+
+  // Public key parts
+  console.log('Public key parts:');
+  console.log('Modulus (n):', publicKey.n); // Base64url-encoded
+  console.log('Exponent (e):', publicKey.e); // Base64url-encoded
+
+  // Assuming the environment allows private key export
+  const privateKey = await window.crypto.subtle.exportKey("jwk", keyPair.privateKey);
+
+  // Private key parts
+  console.log('Private key parts:');
+  console.log('Modulus (n):', privateKey.n); // Same as public key
+  console.log('Private Exponent (d):', privateKey.d); // Base64url-encoded
+
+  // TODO: verify these are the keys
+  return {
+    e: base64urlToBigInt(publicKey.e),
+    N: base64urlToBigInt(publicKey.n),
+    d: base64urlToBigInt(privateKey.d)
+  }
+}
+
+async function ot_alice1(
     inputName: string,
     labelledCircuit: Labels, // Alice
-):AliceOTVals {
+):Promise<AliceOTVals> {
 //   console.log(`oblivious transfer -> value:${inputName}=${inputValue}`);
 
-  // ALICE
-  const { publicKey, privateKey } = generateKeyPairSync("rsa", {
-    modulusLength: 2048,
-  });
+// ALICE
+// const { publicKey, privateKey } = generateKeyPairSync("rsa", {
+//     modulusLength: 2048,
+//   });
 
-  const pubkey = publicKey.export({ format: "jwk" });
-  const privkey = privateKey.export({ format: "jwk" });
+//   const pubkey = publicKey.export({ format: "jwk" });
+//   const privkey = privateKey.export({ format: "jwk" });
 
   const m0 = Buffer.from(labelledCircuit[inputName][0], "utf-8");
   const m1 = Buffer.from(labelledCircuit[inputName][1], "utf-8");
 
-  const e = getJwkInt(pubkey.e as string);
-  const N = getJwkInt(pubkey.n as string);
-  const d = getJwkInt(privkey.d as string);
+//   const e = getJwkInt(pubkey.e as string);
+//   const N = getJwkInt(pubkey.n as string);
+//   const d = getJwkInt(privkey.d as string);
+    const {e,N,d} = await generateRsaKeyPair()
+
 
   const { x0, x1 } = ot.otSend1();
   return {
@@ -91,7 +131,7 @@ function ot_bob2(
 
 const { circuit, outputNames } = parseVerilog(circuitStr);
 
-const aliceInit2pc = (subEmbeddingIdx: number, sendMessage: SendMessage) => {
+const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: SendMessage) => {
     clearStorage();
     // ALICE
     const {
@@ -133,7 +173,7 @@ const aliceInit2pc = (subEmbeddingIdx: number, sendMessage: SendMessage) => {
     // we already know that bob needs these inputs. so just send it in the starting packet.
     for (let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
-        const aliceOtVals = ot_alice1(inputName, labelledCircuit);
+        const aliceOtVals = await ot_alice1(inputName, labelledCircuit);
         aliceOtInputs[inputName] = aliceOtVals
 
         bobOtInputs[inputName] = {
