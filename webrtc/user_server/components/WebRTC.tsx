@@ -1,5 +1,5 @@
 import { MessageType } from '@/types';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { aliceCalcFinalSum, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 
@@ -13,6 +13,7 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
   //Public API that will echo messages sent to it back to the client
   const [socketUrl, setSocketUrl] = useState('ws://localhost:8080');
 
+  const inputRef = useRef(null)
 
   const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
   const [messages, setMessages] = useState([])
@@ -80,10 +81,13 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
     }
     // TODO: add your message 
     const receivingPerson = currentPerson === 'Alice' ? 'Bob' : 'Alice'
-    const messageToSend = { 'sender': currentPerson, 'content': 'Hello' }
+    const messageToSend = { 'sender': currentPerson, 'content': inputRef.current }
 
     setMessages((prev) => [...prev, messageToSend]);
 
+    if (inputRef.current) {
+      inputRef.current = '';
+    }
     sendMessage(messageToSend.content);
 
   }, [currentPerson]);
@@ -101,32 +105,28 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
     sendMessage(MessageType.EndConversation)
     setMessages([])
     setCurrentPerson('')
+    inputRef.current.value = '';
   }
   return (
-    <div>
-      <button
-        onClick={handleClickSendMessage}
-        disabled={readyState !== ReadyState.OPEN}
-        className={`bg-${readyState === ReadyState.OPEN ? 'green' : 'green'}-500 
-                  ${readyState === ReadyState.OPEN ? 'hover:bg-green-700' : ''} 
-                  text-white font-bold py-2 px-4 rounded`}
-      >
-        Click Me to send 'Hello'
-      </button>
-      <buttonq
-        onClick={clearConversation}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        Click Me to Clear Conversation
-      </buttonq>
-      <span>The WebSocket is currently {connectionStatus}</span>
-      <ul>
+    <div className="flex flex-col h-screen bg-gray-100 w-3/5">
+      <div className="flex items-center justify-between p-4 bg-blue-500 text-white">
+        <button
+          onClick={clearConversation}
+          className="hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Clear Conversation
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
         {messages.map((message, idx) => (
-          <li key={idx} className="mb-2">
-            {message?.sender === currentPerson ? message?.content : `From ${message?.sender} ${message?.content}`}
-          </li>
+          <div key={idx} className={`message ${message?.sender === currentPerson ? 'sent' : 'received'}`} style={{ backgroundColor: message?.sender === currentPerson ? 'lightblue' : 'white', borderRadius: '5px', marginBottom: '10px' }}>
+            {message?.sender === currentPerson ? message?.content : <span className="">{`${message?.content}`}</span>}
+          </div>
         ))}
-      </ul>
+      </div>
+      <div className="p-4">
+        <input type="text" onChange={e => inputRef.current = e.target.value} onKeyPress={e => { if (e.key === 'Enter') { handleClickSendMessage(); } }} ref={inputRef} className="w-full p-2 border border-gray-300 rounded" style={{ width: '100%', maxWidth: '800px' }} />
+      </div>
     </div>
   );
 };

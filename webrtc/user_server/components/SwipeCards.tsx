@@ -48,22 +48,7 @@ export default function SwipeCards() {
                 <h2 className="text-center text-2xl text-pink-600 mb-4">Question {question.id}</h2>
                 <p className="text-center text-pink-700">{question.text}</p>
             </animated.div>
-            <div className="mt-8 flex justify-center gap-4">
-                <button
-                    onClick={() => swipe(-1)}
-                    disabled={isAnimating}
-                    className="px-4 py-2 bg-pink-500 text-white rounded-md text-lg font-medium hover:bg-pink-700 transition duration-200 ease-in-out"
-                >
-                    Swipe Left
-                </button>
-                <button
-                    onClick={() => swipe(1)}
-                    disabled={isAnimating}
-                    className="px-4 py-2 bg-pink-500 text-white rounded-md text-lg font-medium hover:bg-pink-700 transition duration-200 ease-in-out"
-                >
-                    Swipe Right
-                </button>
-            </div>
+
         </div>
     );
 }

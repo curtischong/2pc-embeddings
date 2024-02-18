@@ -57,7 +57,14 @@ export default function SwipeCards() {
           Swipe Left
         </button>
         <button
-          onClick={() => swipe(1)}
+          onClick={() => {
+            if (currentQuestionIndex === questions.length - 1) {
+              window.location.href = '/landing';
+            } else {
+              swipe(1);
+              console.log(currentQuestionIndex)
+            }
+          }}
           disabled={isAnimating}
           className="px-4 py-2 bg-pink-500 text-white rounded-md text-lg font-medium hover:bg-pink-700 transition duration-200 ease-in-out"
         >

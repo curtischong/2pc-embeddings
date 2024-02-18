@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { MessageType } from '../types';
 import { aliceCalcFinalSum, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 import { Message } from 'postcss';
+import Link from 'next/link';
 
 const SERVER_IP = 'localhost';
 
@@ -207,12 +208,9 @@ export default function ToggleBeacon() {
         <div>
             <h1 className="text-3xl font-bold text-pink-600">Love Beacon</h1>
             <p className="text-pink-600 mt-2 text-sm">Find Love Nearby</p>
-
-            {/* Conditional Beacon Icon */}
             <div className={`mt-4 text-3xl ${beaconActive ? 'animate-ping' : ''}`}>
                 {beaconActive ? '📡' : '📶'}
             </div>
-
             <button
                 onClick={toggleBeacon}
                 className={`mt-8 px-6 py-2 rounded-lg shadow transition duration-200 ease-in-out font-medium
@@ -222,13 +220,10 @@ export default function ToggleBeacon() {
             </button>
 
             {beaconActive && knownUUIDS.map((uuid, index) => (
-                <div key={uuid} className="mt-4">
-                    <button
-                        className="px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                        onClick={() => connectWithOther(uuid)}
-                    >
-                        Check compatibility with {uuid}
-                    </button>
+                <div key={uuid} className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                    <Link className="" href="/match">
+                        Check compatibility with {localStorage.getItem('bobUUID') == uuid ? 'Bob' : 'Alice'}
+                    </Link>
                 </div>
             ))}
         </div>
