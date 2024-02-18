@@ -55,57 +55,62 @@ export default function ToggleBeacon() {
         console.log(event.data);
         // console.log(JSON.parse(event.data));
 
-
+        let message = null;
         try {
-            const message = JSON.parse(event.data);
-            if ('uuids' in message) {
-                setKnownUUIDS(message.uuids);
-            }
-
-            if('2pc' in message){
-                const aliceUUID = message.uuid
-                const bobUUID = message.target_uuid
-                const sendBobMessage = (message: any, messageType: MessageType) => {
-                    sendMessage({
-                        ...message,
-                        uuid: aliceUUID,
-                        target_uuid: bobUUID,
-                    }, messageType)
-                }
-                const sendAliceMessage = (message: any, messageType: MessageType) => {
-                    sendMessage({
-                        ...message,
-                        uuid: bobUUID,
-                        target_uuid: aliceUUID,
-                    },messageType)
-                }
-
-                const messageType = message.messageType
-                console.log(messageType)
-                switch (messageType) {
-                case MessageType.AliceInit2pc:
-                    // setCurrentPerson('Bob')
-                    bobReceive2pc(message.garbledCircuit, message.bobOtInputs, message.aliceInputLabels, message.subEmbeddingIdx, sendAliceMessage)
-                    break;
-                case MessageType.BobReceive2pc:
-                    aliceReceiveVFromBob(message.aliceVVals, sendBobMessage)
-                    break;
-                case MessageType.AliceReceiveVFromBob:
-                    bobResolveInputs(message.bobVVals, sendAliceMessage)
-                    break;
-                case MessageType.BobResolveInputs:
-                    aliceCalcFinalSum(message.outputLabels)
-                    break;
-                case MessageType.AliceComputeDotProduct:
-                    console.log('Alice computed dot product:', message.totalDotProduct)
-                    break;
-                default:
-                    console.log("unhandled msgType", messageType)
-                    break;
-                }
-            }
+            message = JSON.parse(event.data);
         } catch(e) {
             console.warn(e);
+        }
+        if (message === null){
+            console.error("couldn't parse message");
+            return
+        }
+
+        if ('uuids' in message) {
+            setKnownUUIDS(message.uuids);
+        }
+
+        if('2pc' in message){
+            const aliceUUID = message.uuid
+            const bobUUID = message.target_uuid
+            const sendBobMessage = (message: any, messageType: MessageType) => {
+                sendMessage({
+                    ...message,
+                    uuid: aliceUUID,
+                    target_uuid: bobUUID,
+                }, messageType)
+            }
+            const sendAliceMessage = (message: any, messageType: MessageType) => {
+                sendMessage({
+                    ...message,
+                    uuid: bobUUID,
+                    target_uuid: aliceUUID,
+                },messageType)
+            }
+
+            const messageType = message.messageType
+            console.log(messageType)
+            switch (messageType) {
+            case MessageType.AliceInit2pc:
+                // setCurrentPerson('Bob')
+                bobReceive2pc(message.garbledCircuit, message.bobOtInputs, message.aliceInputLabels, message.subEmbeddingIdx, sendAliceMessage)
+                break;
+            case MessageType.BobReceive2pc:
+                aliceReceiveVFromBob(message.aliceVVals, sendBobMessage)
+                break;
+            case MessageType.AliceReceiveVFromBob:
+                bobResolveInputs(message.bobVVals, sendAliceMessage)
+                break;
+            case MessageType.BobResolveInputs:
+                aliceCalcFinalSum(message.outputLabels)
+                break;
+            case MessageType.AliceComputeDotProduct:
+                console.log('Alice computed dot product:', message.totalDotProduct)
+                break;
+            default:
+                console.log("unhandled msgType", messageType)
+                break;
+            }
         }
     };
 

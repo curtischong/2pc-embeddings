@@ -2,6 +2,8 @@ import { randomBytes } from "crypto";
 import { bufferToBigInt, bigIntToBuffer } from "./utils";
 
 function mod(n: bigint, m: bigint): bigint {
+  // console.log("n", n);
+  // console.log("m", m);
   return ((n % m) + m) % m;
 }
 
@@ -10,6 +12,11 @@ function mod(n: bigint, m: bigint): bigint {
   https://gist.github.com/krzkaczor/0bdba0ee9555659ae5fe
 */
 function modpow(a: bigint, b: bigint, n: bigint) {
+  a = BigInt(a);
+  b = BigInt(b);
+  n = BigInt(n);
+
+
   a = mod(a, n);
   let result = BigInt(1);
   let x = a;
@@ -47,6 +54,15 @@ export function otSend2(
   m0: Buffer,
   m1: Buffer,
 ) {
+  N = BigInt(N);
+  d = BigInt(d);
+  x0 = BigInt(x0);
+  x1 = BigInt(x1);
+  v = BigInt(v);
+  m0 = Buffer.from(m0);
+  m1 = Buffer.from(m1);
+  console.log(m0)
+
   const k0 = modpow(v - x0, d, N);
   const k1 = modpow(v - x1, d, N);
 
@@ -65,11 +81,11 @@ export function otRecv1(
   nbits: number = 2048,
 ) {
   const k = bufferToBigInt(randomBytes(nbits / 8));
-  const xb = [x0, x1][b];
+  const xb = BigInt([x0, x1][b]);
 
   // const now = new Date().getTime();
   // const v = mod(xb + k ** e, N);
-  const v = (xb + modpow(k, e, N)) % N;
+  const v = (xb + modpow(k, e, N)) % BigInt(N);
   // console.log("mod", new Date().getTime() - now);
 
   return { v, k };

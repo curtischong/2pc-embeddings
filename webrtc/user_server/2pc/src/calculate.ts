@@ -104,6 +104,7 @@ function ot_bob1(
     inputValue: InputValue,
     bobOTVals: BobOTVals,
 ) {
+    // console.log("ot_bob1", bobOTVals)
   // BOB
   return ot.otRecv1(inputValue, bobOTVals.e, bobOTVals.N, bobOTVals.x0, bobOTVals.x1);
 }
@@ -114,6 +115,8 @@ function ot_alice2(
 ): mVals {
   // ALICE
   // const { m0k, m1k } = 
+  console.log("bobV", bobV)
+  console.log("aliceOTVals", aliceOTVals)
   return ot.otSend2(aliceOTVals.d, aliceOTVals.N, aliceOTVals.x0, aliceOTVals.x1, bobV, aliceOTVals.m0, aliceOTVals.m1);
 }
 
@@ -237,6 +240,7 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     for(let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
         const { v, k } = ot_bob1(bobInputs[inputName], bobOtInputs[inputName]);
+        console.log("v", v, "k", k)
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
     }
@@ -263,6 +267,7 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: any) => {
     for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
         // const { m0k, m1k } = ot_alice2(bobV, aliceOtVals);
         // we need to send this back to bob: const { m0k, m1k } = 
+        console.log("aliceVVals", aliceVVals, "inputName", inputName)
         bobMVals[inputName] = ot_alice2(aliceVVals[inputName], aliceOtVals)
     }
     sendMessage({
