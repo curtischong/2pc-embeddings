@@ -1,5 +1,6 @@
 import { getRandomValues } from "crypto";
 import { Bit } from "./circuit/garble";
+import webcrypto from "crypto";
 
 export function bufferToBigInt(buffer: Buffer): bigint {
   return BigInt("0x" + buffer.toString("hex"));
@@ -20,7 +21,7 @@ export function cartesianProduct(...a: unknown[][]): any[] {
 export function secureShuffle(array: unknown[]) {
   for (let i = array.length - 1; i > 0; i--) {
     const buf = new Uint8Array(1);
-    getRandomValues(buf);
+    window.crypto.getRandomValues(buf);
     const j = Math.floor((buf[0] / 2 ** 8) * i);
     const temp = array[i];
     array[i] = array[j];

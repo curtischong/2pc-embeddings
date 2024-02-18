@@ -127,7 +127,7 @@ export function getCombinedKey(labels: string[]): {
     ? getLeastSignificantBit(Buffer.from(labels[1], "hex"))
     : undefined;
 
-  const hash = createHash("SHA3-256");
+  const hash = createHash("sha256");
 
   labels.sort(); // sort labels so that the order we receive them in does not change the hash
   for (const label of labels) {
