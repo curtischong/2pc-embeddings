@@ -84,6 +84,9 @@ async function ot_alice1(
 //   const pubkey = publicKey.export({ format: "jwk" });
 //   const privkey = privateKey.export({ format: "jwk" });
 
+// console.log("inputName", inputName)
+// console.log("labelledCircuit", labelledCircuit)
+
   const m0 = Buffer.from(labelledCircuit[inputName][0], "utf-8");
   const m1 = Buffer.from(labelledCircuit[inputName][1], "utf-8");
 
@@ -142,21 +145,21 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     } = garbleCircuit(circuit);
     // TODO(Curtis): send via bluetooth
 
-    const aliceWealth = 2e6; // TODO: set subEmbedding
+    // const aliceWealth = 2e6; // TODO: set subEmbedding
     const aliceInputs: NamedInputOutput = {};
-    for (let i = 0; i < 32; i++) {
-        aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
-    }
+    // for (let i = 0; i < 32; i++) {
+    //     aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
+    // }
 
-    // const subEmbedding = getSubEmbedding(subEmbeddingIdx)
-    // for(let dim = 0; dim < numDimensionsToDot; dim++) {
-    //     for(let bit = 0; bit < 4; bit++) {
-    //         aliceInputs[`vectorA_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
-    //     }
-    // }
-    // for(let i = 0; i < numDimensionsToDot; i++){
-    //     aliceInputs[`vectorC_${i}`] = subEmbedding.isPositive[i]
-    // }
+    const subEmbedding = getSubEmbedding(subEmbeddingIdx)
+    for(let dim = 0; dim < numDimensionsToDot; dim++) {
+        for(let bit = 0; bit < 4; bit++) {
+            aliceInputs[`vectorA_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
+        }
+    }
+    for(let i = 0; i < numDimensionsToDot; i++){
+        aliceInputs[`vectorC_${i}`] = subEmbedding.isPositive[i]
+    }
 
     const aliceInputLabels = Object.entries(aliceInputs).reduce(
     (inputs: NamedLabel, [name, value]) => {
@@ -173,8 +176,8 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     const bobOtInputs: BobOTInputs = {} // same as AliceOTInputs, but we hide the m0 and m1 values
     // alice starts the OT for all the inputs that bob needs.
     // we already know that bob needs these inputs. so just send it in the starting packet.
-    for (let i = 0; i < 32; i++) {
-        const inputName = `B_${i}`
+    for (let i = 0; i <  numDimensionsToDot * 4; i++) {
+        const inputName = `vectorB_${i}`
         const aliceOtVals = await ot_alice1(inputName, labelledCircuit);
         aliceOtInputs[inputName] = aliceOtVals
 
@@ -220,25 +223,25 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     // BOB
     const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
-    for (let i = 0; i < 32; i++) {
-        bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
-    }
+    // for (let i = 0; i < 32; i++) {
+    //     bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
+    // }
 
-    // const subEmbedding = getSubEmbedding(subEmbeddingIdx)
-    // for(let dim = 0; dim < numDimensionsToDot; dim++) {
-    //     for(let bit = 0; bit < 4; bit++) {
-    //         bobInputs[`vectorB_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
-    //     }
-    // }
-    // for(let i = 0; i < numDimensionsToDot; i++){
-    //     bobInputs[`vectorD_${i}`] = subEmbedding.isPositive[i]
-    // }
+    const subEmbedding = getSubEmbedding(subEmbeddingIdx)
+    for(let dim = 0; dim < numDimensionsToDot; dim++) {
+        for(let bit = 0; bit < 4; bit++) {
+            bobInputs[`vectorB_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
+        }
+    }
+    for(let i = 0; i < numDimensionsToDot; i++){
+        bobInputs[`vectorD_${i}`] = subEmbedding.isPositive[i]
+    }
 
     const bobVKVals: BobVKVals = {}
     const aliceVVals: AliceVVals = {}
 
-    for(let i = 0; i < 32; i++) {
-        const inputName = `B_${i}`
+    for(let i = 0; i < numDimensionsToDot * 4; i++) {
+        const inputName = `vectorB_${i}`
         const { v, k } = ot_bob1(bobInputs[inputName], bobOtInputs[inputName]);
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
@@ -281,15 +284,10 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
     const bobOTInputs = fromStorage("bobOtInputs") as BobOTInputs
     const garbledCircuit = fromStorage("garbledCircuit") as GarbledTable[]
     const aliceInputLabels = fromStorage("aliceInputLabels") as NamedLabel
-    console.log("bobInputs", bobInputs)
-    console.log("bobVKVals", bobVKVals)
-    console.log("bobOTInputs", bobOTInputs)
-    console.log("garbledCircuit", garbledCircuit)
-    console.log("aliceInputLabels", aliceInputLabels)
 
     const bobInputLabels:NamedLabel = {}
-    for(let i = 0; i < 32; i++) {
-        const inputName = `B_${i}`
+    for(let i = 0; i < numDimensionsToDot * 4; i++) {
+        const inputName = `vectorB_${i}`
         const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
         bobInputLabels[inputName] = m
     }
@@ -359,7 +357,7 @@ const quantizeTo4Bits = (value: number): number => {
   }
 
 interface QuantizedInput {
-    isPositive: number[],
+    isPositive: InputValue[],
     quantized: number[]
 }
 
