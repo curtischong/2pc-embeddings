@@ -114,6 +114,9 @@ function setupDataChannel() {
     };
     dataChannel.onmessage = (event) => {
         const message = event.data;
+        if(message.type === 'initiate-2pc'){
+            initiate2pc(message)
+        }
         displayMessage('Peer', message);
     };
     dataChannel.onerror = (error) => {
