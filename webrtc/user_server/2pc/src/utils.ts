@@ -92,3 +92,39 @@ export function base64urlToBigInt(base64url) {
   // Convert hexadecimal string to BigInt
   return BigInt(`0x${hex}`);
 }
+
+
+// check that the RSA is legit
+
+// Function to verify RSA parameters e, N, and d
+export function verifyRSA(e, N, d) {
+  // Example message m
+  const m = BigInt(123); // Choose a small test message
+  
+  // Encrypt the message
+  const c = modPow(m, e, N);
+  
+  // Decrypt the message
+  const mDecrypted = modPow(c, d, N);
+  
+  // Check if decryption gives back the original message
+  if (m === mDecrypted) {
+      console.log("RSA parameters are correct.");
+  } else {
+      console.log("RSA parameters are incorrect.");
+  }
+}
+
+// Function to perform modular exponentiation (m^e mod N)
+function modPow(base, exponent, modulus) {
+  if (modulus === BigInt(1)) return BigInt(0);
+  var result = BigInt(1);
+  base = base % modulus;
+  while (exponent > 0) {
+      if (exponent % BigInt(2) === BigInt(1))
+          result = (result * base) % modulus;
+      exponent = exponent >> BigInt(1);
+      base = (base * base) % modulus;
+  }
+  return result;
+}

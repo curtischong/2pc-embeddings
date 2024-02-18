@@ -1,5 +1,5 @@
 import * as ot from "./oblivious-transfer";
-import { b64ToBn, base64ToBigInt, base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit } from "./utils";
+import { b64ToBn, base64ToBigInt, base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit, verifyRSA } from "./utils";
 import { InputValue } from "./circuit/gates";
 import { Circuit, garbleCircuit, GarbledTable, Labels, NamedLabel } from "./circuit/garble";
 import { MessageType } from "../../types"
@@ -51,17 +51,17 @@ async function generateRsaKeyPair() {
   );
 
   // Public key parts
-  console.log('Public key parts:');
-  console.log('Modulus (n):', publicKey.n); // Base64url-encoded
-  console.log('Exponent (e):', publicKey.e); // Base64url-encoded
+//   console.log('Public key parts:');
+//   console.log('Modulus (n):', publicKey.n); // Base64url-encoded
+//   console.log('Exponent (e):', publicKey.e); // Base64url-encoded
 
   // Assuming the environment allows private key export
   const privateKey = await window.crypto.subtle.exportKey("jwk", keyPair.privateKey);
 
   // Private key parts
-  console.log('Private key parts:');
-  console.log('Modulus (n):', privateKey.n); // Same as public key
-  console.log('Private Exponent (d):', privateKey.d); // Base64url-encoded
+//   console.log('Private key parts:');
+//   console.log('Modulus (n):', privateKey.n); // Same as public key
+//   console.log('Private Exponent (d):', privateKey.d); // Base64url-encoded
 
   // TODO: verify these are the keys
   return {
@@ -92,6 +92,7 @@ async function ot_alice1(
 //   const N = getJwkInt(pubkey.n as string);
 //   const d = getJwkInt(privkey.d as string);
     const {e,N,d} = await generateRsaKeyPair()
+    // verifyRSA(e, N, d) // it works!
 
 
   const { x0, x1 } = ot.otSend1();
