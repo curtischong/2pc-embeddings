@@ -147,7 +147,7 @@ interface AliceVVals{
     [inputName: string]: bigint
 }
 
-const bobReceive2pc = (ot_bob_input: BobOTInputs, garbledCircuit: GarbledTable[]) => {
+const bobReceive2pc = (ot_bob_input: BobOTInputs) => {
     // BOB
     const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
@@ -192,31 +192,10 @@ const bobResolveInputs = (bobMVals: BobMVals, bobInputs: NamedInputOutput,
     const bobInputLabels:NamedLabel = {}
     for(let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
-        // inputValue: InputValue, 
-        // bobOTK: bigint,
-        // mVals: mVals
-
         const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
         console.log("m", m)
         bobInputLabels[inputName] = m
     }
-
-    // const bobInputLabels = Object.entries(bobMVals).reduce(
-    //     (inputs: NamedLabel, [name, value]) => {
-    //         // TODO(Curtis): send via bluetooth
-    //         // ask alice for the labels corresponding to name.
-    
-    //         //then bob assigns it based on his value
-    //         const { v, k } = ot_bob2(value, ot_bob_input[name]);
-    //         bobVals[name] = { v, k }
-    //         aliceVals[name] = v
-    
-    //         inputs[name] = doObliviousTransfer(name, value);
-    //         return inputs;
-    //     },
-    //     {},
-    // );
-
 
     console.log(`bob inputs -> ${JSON.stringify(bobInputs)}`);
     console.log(`bob input labels -> ${JSON.stringify(bobInputLabels)}`);
