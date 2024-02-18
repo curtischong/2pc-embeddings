@@ -23,6 +23,7 @@ const sendMessage = (message: any, messageType: MessageType) => {
     //     messageType,
     // }));
     console.log('sending message', message)
+    localStorage.setItem('embedding', JSON.stringify([1,1,1,1]))
     ws.send(JSON.stringify({
         uuid: message.uuid,
         message: 'send',
@@ -50,7 +51,6 @@ export default function ToggleBeacon() {
         localStorage.setItem('uuid', uuid);
       }
 
-      localStorage.setItem('embedding', JSON.stringify([1,1,1,1]))
     //   console.log(uuid);
     }) // DO NOT add ,[]. uuid will NOT be set
 
@@ -80,6 +80,7 @@ export default function ToggleBeacon() {
             let aliceUUID = "ERROR - hsould be filled";
             let bobUUID = "ERROR - hsould be filled";
             if(messageType == MessageType.AliceInit2pc){
+                localStorage.setItem('embedding', JSON.stringify([-1,-1,-1,-1]))
                 localStorage.setItem('aliceUUID', message.uuid)
                 localStorage.setItem('bobUUID', message.target_uuid)
                 aliceUUID = message.uuid

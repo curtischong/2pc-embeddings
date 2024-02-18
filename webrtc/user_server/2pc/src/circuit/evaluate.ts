@@ -38,7 +38,7 @@ function evalGarbledTable(
   console.log(`\t-> inputs:${JSON.stringify(inputs)}`);
 
   const { key, label0lsb, label1lsb } = getCombinedKey(Object.values(inputs));
-  console.log("key", key, "label0lsb", label0lsb, "label1lsb", label1lsb, "values", Object.values(inputs))
+  // console.log("key", key, "label0lsb", label0lsb, "label1lsb", label1lsb, "values", Object.values(inputs))
 
 
   const row = garbledTable.find(

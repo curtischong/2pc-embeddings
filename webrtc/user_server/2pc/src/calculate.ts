@@ -368,8 +368,8 @@ const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
 
 const quantizeTo4Bits = (value: number): number => {
     // Ensure the value is within the expected range
-    if (value < 0 || value > 1) {
-      throw new Error('Value must be between 0 and 1');
+    if (value < -1 || value > 1) {
+      throw new Error('Value must be between -1 and 1');
     }
   
     // Scale the value to the range 0 to 15 and round it
@@ -386,6 +386,7 @@ interface QuantizedInput {
 const quantizeVector = (embedding:number[]): QuantizedInput => {
     const isPositive = embedding.map((x) => x > 0 ? 1 : 0)
     const quantized = embedding.map(quantizeTo4Bits)
+    console.log("isPositive", isPositive)
 
     return {
         isPositive,

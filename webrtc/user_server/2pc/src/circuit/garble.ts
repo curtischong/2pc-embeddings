@@ -128,7 +128,6 @@ export function getCombinedKey(labels: string[]): {
   const label1lsb = labels[1]
     ? getLeastSignificantBit(Buffer.from(labels[1], "hex"))
     : undefined;
-    // : 1; // YOLO. I think this is ok
 
   const hash = createHash("sha256");
 
