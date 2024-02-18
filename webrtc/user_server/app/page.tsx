@@ -7,6 +7,7 @@ import  { aliceComputeDotProduct, aliceInit2pc, aliceReceiveVFromBob } from '../
 
 const Home = () => {
 
+const [currentPerson , setCurrentPerson] = useState('')
 
 const [responseText, setResponseText] = useState('');
 
@@ -82,13 +83,13 @@ const handlePostEmbeddings = async () => {
 
 const initAlice =  () => {
   try {
+    setCurrentPerson('Alice')
     return aliceInit2pc(0)
   
   } catch (error) {
     console.error('Error:', error);
   }
 };
-
 
 const computeA =  () => {
   try {
@@ -98,18 +99,18 @@ const computeA =  () => {
     console.error('Error:', error);
   }
 };
-
+  // TODO: 
 
   return (
     <div className="text-center m-4">
-  <h1 className="text-2xl font-bold mb-4">WebRTC and WebSocket Demo</h1>
+  <h1 className="text-2xl font-bold mb-4">You are {currentPerson || 'Uninitialized'}</h1>
   <div className="flex justify-center gap-4">
     <button onClick={handleConnect} className="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Connect WebSocket</button>
     <button onClick={handleDisconnect} className="px-4 py-2 rounded-md bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Disconnect WebSocket</button>
     <button onClick={handlePostEmbeddings} className="px-4 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">Post Embeddings</button>
-    <button onClick={initAlice} className="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Initialize Alice</button>
+    <button onClick={initAlice} className="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Initialize Alice. You are currently {currentPerson}</button>
     <button onClick={computeA} className="px-4 py-2 rounded-md bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Compute Alice Dot Product</button>
-
+    <WebSocketDemo currentPerson={currentPerson} setCurrentPerson={setCurrentPerson}/>
   </div>
   <div className="mt-4 text-lg">{responseText}</div>
 </div>

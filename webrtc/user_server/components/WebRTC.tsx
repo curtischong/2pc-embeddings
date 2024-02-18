@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
-export const WebSocketDemo = () => {
+
+export const WebSocketDemo = ({currentPerson, setCurrentPerson}) => {
   //Public API that will echo messages sent to it back to the client
   const [socketUrl, setSocketUrl] = useState('ws://localhost:8080');
   const [messageHistory, setMessageHistory] = useState([]);
@@ -10,6 +11,11 @@ export const WebSocketDemo = () => {
 
   useEffect(() => {
     if (lastMessage !== null) {
+      console.log('message received:', lastMessage , 'From', currentPerson)
+      if (currentPerson === '') {
+        setCurrentPerson('Bob')
+      }
+      // keep alice as alice and bob as bob
       setMessageHistory((prev) => prev.concat(lastMessage));
     }
   }, [lastMessage, setMessageHistory]);
@@ -51,8 +57,13 @@ export const WebSocketDemo = () => {
   }, [messageHistory]);
 
 
-  const handleClickSendMessage = useCallback(() => sendMessage('Hello'), []);
-
+  const handleClickSendMessage = useCallback(() => {
+    // Set default to 'Alice' if currentPerson is an empty string
+    const personToSendMessage = currentPerson || 'Alice';
+    sendMessage(`Hello ${personToSendMessage === 'Alice' ? 'Bob' : 'Alice'} from ${personToSendMessage}`);
+  }, [currentPerson]);
+  
+  
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
     [ReadyState.OPEN]: 'Open',
