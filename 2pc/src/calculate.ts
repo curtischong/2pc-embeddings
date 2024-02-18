@@ -88,7 +88,7 @@ function ot_bob2(
 // const { circuit, outputNames } = parseVerilog("../verilog/dotproduct/out.v");
 const { circuit, outputNames } = parseVerilog("../verilog/millionaire/out.v");
 
-const aliceInit2pc = () => {
+const aliceInit2pc = (subEmbedding: number[]) => {
     // ALICE
     const {
     labelledCircuit,
@@ -96,7 +96,7 @@ const aliceInit2pc = () => {
     } = garbleCircuit(circuit);
     // TODO(Curtis): send via bluetooth
 
-    const aliceWealth = 2e6;
+    const aliceWealth = 2e6; // TODO: set subEmbedding
     const aliceInputs: NamedInputOutput = {};
     for (let i = 0; i < 32; i++) {
     aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
@@ -132,6 +132,8 @@ const aliceInit2pc = () => {
 
     // send the OT data to bob
     // send(garbledCircuit, bobOtInputs, aliceInputLabels)
+
+    // TODO: setup the xor
 }
 
 interface BobVK {
@@ -218,7 +220,8 @@ const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
-    // sendToBob(outputs)
+
+    // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
 }
 
 
@@ -227,15 +230,55 @@ const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
 //    - this gets bob the data needed to run the value through the circuit to get the result
 // 3) bob sends result to alice
 
-const quantizeVector = (embedding:number[]) => {
-    
+const quantizeTo4Bits = (value: number): number => {
+    // Ensure the value is within the expected range
+    if (value < 0 || value > 1) {
+      throw new Error('Value must be between 0 and 1');
+    }
+  
+    // Scale the value to the range 0 to 15 and round it
+    const quantized = Math.round(value * 15);
+  
+    return quantized;
+  }
+
+interface QuantizedInput {
+    isPositive: boolean[],
+    quantized: number[]
+}
+
+const quantizeVector = (embedding:number[]):QuantizedInput => {
+    const isPositive = embedding.map((x) => x > 0 ? true : false)
+    const quantized = embedding.map(quantizeTo4Bits)
+
+    return {
+        isPositive,
+        quantized
+    }
+}
+
+const calcualteDotProduct = (a:QuantizedInput):number => {
+    // TODO: init 2PC
+    return 0
 }
 
 const numDimensionsToDot = 10
-
 const aliceComputeDotProduct = () => {
     const embedding = [1,2,3,4]
-    for(let i = 0; i < embedding.length; i += 20)
-    // 1) for each embedding, 
+    // pad embedding to be a multiple of numDimensionsToDot
+    const padding = new Array(numDimensionsToDot - (embedding.length % numDimensionsToDot)).fill(0)
+    const paddedEmbedding = embedding.concat(padding)
+
+    let totalDotProduct = 0
+    for(let i = 0; i < paddedEmbedding.length; i += numDimensionsToDot){
+        const subEmbedding = paddedEmbedding.slice(i, i + numDimensionsToDot)
+        const quantizedInput = quantizeVector(subEmbedding)
+        const embeddingDotProduct = calcualteDotProduct(quantizedInput);
+        totalDotProduct += embeddingDotProduct;
+    }
+
+    // TODO:
+    // sendToBob(totalDotProduct)
+    return totalDotProduct;
 }
 
