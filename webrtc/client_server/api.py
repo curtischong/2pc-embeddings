@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket
 import json
+from pydantic import BaseModel
+from embeddings import generate_embeddings
 
 app = FastAPI()
 
@@ -32,3 +34,15 @@ async def websocket_endpoint(websocket: WebSocket):
             'status': True
         }
         await websocket.send_text(json.dumps(known_ip_data))
+
+
+class EmbeddingsData(BaseModel):
+    MBTI: str
+    Love_Languages: str
+    Hobbies: str
+
+@app.post("/embeddings")
+async def create_embeddings(data: EmbeddingsData) -> dict[str, list]:
+    embed_list = generate_embeddings(data.dict())
+    return {"embeddings": embed_list}
+    

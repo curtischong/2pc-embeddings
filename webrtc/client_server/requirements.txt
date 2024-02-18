@@ -1,3 +1,5 @@
 uvicorn
 fastapi
 websockets
+transformers
+torch
