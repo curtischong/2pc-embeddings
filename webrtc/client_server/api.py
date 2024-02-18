@@ -34,7 +34,7 @@ async def websocket_endpoint(websocket: WebSocket):
         }
         await websocket.send_text(json.dumps(known_hosts_data))
 
-@app.websocket("/disonnect")
+@app.websocket("/disconnect")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     client_host = websocket.client.host
