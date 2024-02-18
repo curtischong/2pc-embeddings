@@ -80,7 +80,7 @@ export default function ToggleBeacon() {
             let aliceUUID = "ERROR - hsould be filled";
             let bobUUID = "ERROR - hsould be filled";
             if(messageType == MessageType.AliceInit2pc){
-                localStorage.setItem('embedding', JSON.stringify([-1,-1,-1,-1]))
+                localStorage.setItem('embedding', JSON.stringify([1,1,1,0.5]))
                 localStorage.setItem('aliceUUID', message.uuid)
                 localStorage.setItem('bobUUID', message.target_uuid)
                 aliceUUID = message.uuid
