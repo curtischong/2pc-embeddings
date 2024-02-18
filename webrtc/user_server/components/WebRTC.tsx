@@ -23,16 +23,16 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson,  setProfile}) =>
       switch (messageType) {
         case MessageType.AliceInit2pc:
           setCurrentPerson('Bob')
-          bobReceive2pc(message.bobOtInputs, message.subEmbeddingIdx)
+          bobReceive2pc(message.bobOtInputs, message.subEmbeddingIdx, sendMessage)
           break;
         case MessageType.BobReceive2pc:
-          aliceReceiveVFromBob(message.aliceVVals)
+          aliceReceiveVFromBob(message.aliceVVals, sendMessage)
           break;
         case MessageType.AliceReceiveVFromBob:
-          bobResolveInputs(message.bobVVals)
+          bobResolveInputs(message.bobVVals, sendMessage)
           break;
         case MessageType.BobResolveInputs:
-          aliceCalcFinalSum(message.outputLabels)
+          aliceCalcFinalSum(message.outputLabels, sendMessage)
           break;
         case MessageType.AliceComputeDotProduct:
           console.log('Alice computed dot product:', message.totalDotProduct)

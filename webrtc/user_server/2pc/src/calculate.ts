@@ -92,6 +92,7 @@ function ot_bob2(
 const { circuit, outputNames } = parseVerilog(circuitStr);
 
 const aliceInit2pc = (subEmbeddingIdx: number, sendMessage: SendMessage) => {
+    clearStorage();
     // ALICE
     const {
     labelledCircuit,
@@ -143,7 +144,8 @@ const aliceInit2pc = (subEmbeddingIdx: number, sendMessage: SendMessage) => {
         }
     }
 
-    // TODO: save to localStorage: aliceOtInputs
+    toStorage("aliceOtInputs", aliceOtInputs)
+    toStorage("subEmbeddingIdx", subEmbeddingIdx)
 
     // send the OT data to bob
     sendToBob({
@@ -164,7 +166,9 @@ interface AliceVVals{
     [inputName: string]: bigint
 }
 
-const bobReceive2pc = (bobOtInputs: BobOTInputs, subEmbeddingIdx: number) => {
+const bobReceive2pc = (bobOtInputs: BobOTInputs, subEmbeddingIdx: number, sendMessage: SendMessage) => {
+    toStorage("bobOtInputs", bobOtInputs)
+    toStorage("subEmbeddingIdx", subEmbeddingIdx)
     // BOB
     const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
@@ -191,10 +195,11 @@ const bobReceive2pc = (bobOtInputs: BobOTInputs, subEmbeddingIdx: number) => {
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
     }
+    toStorage("bobVKVals", bobVKVals)
     // TODO: save to localStorage: aliceVVals
     sendToAlice({
         aliceVVals,
-    }, MessageType.BobReceive2pc)
+    }, MessageType.BobReceive2pc, sendMessage)
 }
 
 interface mVals {
@@ -205,7 +210,7 @@ interface BobMVals {
     [bobInputName: string]: mVals
 }
 
-const aliceReceiveVFromBob = (aliceVVals:AliceVVals) => {
+const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: SendMessage) => {
     const aliceOtInputs = {} // TODO: get from local storage
     const bobMVals: BobMVals = {}
     for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
@@ -215,12 +220,12 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals) => {
     }
     sendToBob({
         bobMVals
-    }, MessageType.AliceReceiveVFromBob)
+    }, MessageType.AliceReceiveVFromBob, sendMessage)
 }
 
 const bobResolveInputs = (bobMVals: BobMVals, 
     bobOTInputs: BobOTInputs, bobVKVals: BobVKVals, garbledCircuit: GarbledTable[],
-    aliceInputLabels:NamedLabel) => {
+    aliceInputLabels:NamedLabel, sendMessage: SendMessage) => {
     const bobInputs: NamedInputOutput = {};// TODO: get from local storage
 
     const bobInputLabels:NamedLabel = {}
@@ -245,7 +250,7 @@ const bobResolveInputs = (bobMVals: BobMVals,
     // sendToAlice(outputLabels)
     sendToAlice({
         outputLabels
-    }, MessageType.BobResolveInputs)
+    }, MessageType.BobResolveInputs, sendMessage)
 }
 
 // the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
@@ -320,7 +325,7 @@ const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
     return quantizeVector(subEmbedding)
 }
 
-const aliceComputeDotProduct = () => {
+const aliceComputeDotProduct = (sendMessage: SendMessage) => {
     const embedding = [1,2,3,4]
     // pad embedding to be a multiple of numDimensionsToDot
     const paddedEmbeddingLen = embedding.length + (numDimensionsToDot - (embedding.length % numDimensionsToDot))
@@ -332,7 +337,7 @@ const aliceComputeDotProduct = () => {
         totalDotProduct += embeddingDotProduct;
     }
 
-    sendToBob({totalDotProduct}, MessageType.AliceComputeDotProduct)
+    sendToBob({totalDotProduct}, MessageType.AliceComputeDotProduct, sendMessage)
     return totalDotProduct;
 }
 
@@ -341,6 +346,21 @@ const sendToAlice = (jsonObj: any, messageType: MessageType, sendMessage: SendMe
 }
 
 const sendToBob = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
+}
+
+const clearStorage = () => {
+    const savedToStorage = ["aliceOtInputs", "subEmbeddingIdx", "bobOtInputs", "bobVKVals"]
+    for(const key of savedToStorage){
+        localStorage.removeItem(key)
+    }
+}
+
+const toStorage = (key:string, val:any) => {
+    localStorage.setItem(key, JSON.stringify(val));
+}
+
+const fromStorage = (key:string) => {
+    return JSON.parse(localStorage.getItem(key));
 }
 
 export { aliceComputeDotProduct, aliceInit2pc, bobReceive2pc, aliceReceiveVFromBob, bobResolveInputs, aliceCalcFinalSum};
