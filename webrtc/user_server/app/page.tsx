@@ -82,7 +82,7 @@ const handlePostEmbeddings = async () => {
 
 const initAlice =  () => {
   try {
-    return aliceInit2pc([])
+    return aliceInit2pc(0)
   
   } catch (error) {
     console.error('Error:', error);
