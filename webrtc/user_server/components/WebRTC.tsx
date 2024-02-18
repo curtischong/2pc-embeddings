@@ -63,22 +63,28 @@ export const WebSocketDemo = () => {
 
   return (
     <div>
-      <button onClick={handleClickChangeSocketUrl}>
-        Click Me to change Socket Url
-      </button>
-      <button
-        onClick={handleClickSendMessage}
-        disabled={readyState !== ReadyState.OPEN}
-      >
-        Click Me to send 'Hello'
-      </button>
-      <span>The WebSocket is currently {connectionStatus}</span>
+    <button 
+      onClick={handleClickChangeSocketUrl}
+      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+    >
+      Click Me to change Socket Url
+    </button>
+    <button
+      onClick={handleClickSendMessage}
+      disabled={readyState !== ReadyState.OPEN}
+      className={`bg-${readyState === ReadyState.OPEN ? 'green' : 'green'}-500 
+                  ${readyState === ReadyState.OPEN ? 'hover:bg-green-700' : ''} 
+                  text-white font-bold py-2 px-4 rounded`}
+    >
+      Click Me to send 'Hello'
+    </button>
+    <span>The WebSocket is currently {connectionStatus}</span>
 
-      <ul>
-        {textMessages.map((message, idx) => (
-          <span key={idx}>{message ? message : null}</span>
-        ))}
-      </ul>
-    </div>
+    <ul>
+      {textMessages.map((message, idx) => (
+        <li key={idx} className="mb-2">{message ? message : null}</li>
+      ))}
+    </ul>
+  </div>
   );
 };
