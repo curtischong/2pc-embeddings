@@ -94,18 +94,18 @@ function handleCandidate(candidate) {
      
     };
 
-    const dc = pc.createDataChannel("chat");
-    dataChannel.current = dc;
+    
+    dataChannel.current = pc.createDataChannel("chat");
 
-    dc.onopen = () => console.log("Data Channel is open");
-    dc.onmessage = (event) => {
+    dataChannel.current.onopen = () => console.log("Data Channel is open");
+    dataChannel.current.onmessage = (event) => {
         const message = event.data;
         displayMessage('Peer', message);
     };
-    dc.onerror = (error) => {
+    dataChannel.current.onerror = (error) => {
         console.error("Data Channel Error:", error);
     };
-    dc.onclose = () => {
+    dataChannel.current.onclose = () => {
         console.log("Data Channel is closed");
     };
 
@@ -130,12 +130,22 @@ function handleCandidate(candidate) {
   };
 
   const sendMessage = () => {
-    if (dataChannel.current.readyState === 'open') {
-      dataChannel.current.send(messageInput);
-      displayMessage('You', messageInput);
-      setMessageInput(''); // Clear the message input after sending
-    } else { 
-        console.log('not connected', dataChannel, dataChannel.current, dataChannel.current.readyState )
+    const sendWhenReady = () => {
+      if (dataChannel.current.readyState === 'open') {
+        dataChannel.current.send(messageInput);
+        displayMessage('You', messageInput);
+        setMessageInput(''); // Clear the message input after sending
+      } else {
+        // Data channel is not open yet, wait and check again
+        // console.log('hello')
+        setTimeout(sendWhenReady, 100); // Check again after 100 milliseconds
+      }
+    };
+  
+    if (dataChannel.current) {
+      sendWhenReady();
+    } else {
+      console.log('Data channel is not available.');
     }
   };
 
