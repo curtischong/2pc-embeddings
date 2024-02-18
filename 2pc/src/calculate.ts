@@ -10,6 +10,7 @@ import {
 } from "./circuit/evaluate";
 import { parseVerilog } from "./verilog";
 
+const numDimensionsToDot = 10
 type AliceOTVals = {
     e: bigint,
     N: bigint,
@@ -88,7 +89,7 @@ function ot_bob2(
 // const { circuit, outputNames } = parseVerilog("../verilog/dotproduct/out.v");
 const { circuit, outputNames } = parseVerilog("../verilog/millionaire/out.v");
 
-const aliceInit2pc = (subEmbedding: number[]) => {
+const aliceInit2pc = (subEmbeddingIdx: number) => {
     // ALICE
     const {
     labelledCircuit,
@@ -99,8 +100,18 @@ const aliceInit2pc = (subEmbedding: number[]) => {
     const aliceWealth = 2e6; // TODO: set subEmbedding
     const aliceInputs: NamedInputOutput = {};
     for (let i = 0; i < 32; i++) {
-    aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
+        aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
     }
+
+    // TODO: get subEmbedding
+    // const quantizedInput = quantizeVector(subEmbedding)
+
+    // const subEmbedding = subEmbeddings[subEmbeddingIdx]
+    // for(let dim = 0; dim < numDimensionsToDot; dim++) {
+    //     for(let bit = 0; bit < 4; bit++) {
+    //         aliceInputs[`vectorA_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
+    //     }
+    // }
 
     const aliceInputLabels = Object.entries(aliceInputs).reduce(
     (inputs: NamedLabel, [name, value]) => {
@@ -131,7 +142,7 @@ const aliceInit2pc = (subEmbedding: number[]) => {
     }
 
     // send the OT data to bob
-    // send(garbledCircuit, bobOtInputs, aliceInputLabels)
+    // send(garbledCircuit, bobOtInputs, aliceInputLabels, subEmbeddingIdx)
 
     // TODO: setup the xor
 }
@@ -149,13 +160,20 @@ interface AliceVVals{
     [inputName: string]: bigint
 }
 
-const bobReceive2pc = (ot_bob_input: BobOTInputs) => {
+const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx:number) => {
     // BOB
     const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
     for (let i = 0; i < 32; i++) {
         bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
     }
+
+    // const subEmbedding = subEmbeddings[subEmbeddingIdx]
+    // for(let dim = 0; dim < numDimensionsToDot; dim++) {
+    //     for(let bit = 0; bit < 4; bit++) {
+    //         bobInputs[`vectorB_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
+    //     }
+    // }
 
     const bobVKVals: BobVKVals = {}
     const aliceVVals: AliceVVals = {}
@@ -247,7 +265,7 @@ interface QuantizedInput {
     quantized: number[]
 }
 
-const quantizeVector = (embedding:number[]):QuantizedInput => {
+const quantizeVector = (embedding:number[]): QuantizedInput => {
     const isPositive = embedding.map((x) => x > 0 ? true : false)
     const quantized = embedding.map(quantizeTo4Bits)
 
@@ -257,23 +275,30 @@ const quantizeVector = (embedding:number[]):QuantizedInput => {
     }
 }
 
-const calcualteDotProduct = (a:QuantizedInput):number => {
+const calculateDotProduct = (subEmbeddingIdx:number):number => {
     // TODO: init 2PC
     return 0
 }
 
-const numDimensionsToDot = 10
+const getSubEmbedding = (subEmbeddingIdx: number) => {
+    const embedding = [1,2,3,4]
+    // pad embedding to be a multiple of numDimensionsToDot
+    const padding = new Array(numDimensionsToDot - (embedding.length % numDimensionsToDot)).fill(0)
+    const paddedEmbedding = embedding.concat(padding)
+    const subEmbedding = paddedEmbedding.slice(subEmbeddingIdx*numDimensionsToDot, subEmbeddingIdx*numDimensionsToDot + numDimensionsToDot)
+    return subEmbedding
+}
+
 const aliceComputeDotProduct = () => {
     const embedding = [1,2,3,4]
     // pad embedding to be a multiple of numDimensionsToDot
     const padding = new Array(numDimensionsToDot - (embedding.length % numDimensionsToDot)).fill(0)
     const paddedEmbedding = embedding.concat(padding)
+    const numSubEmbeddings = paddedEmbedding.length / numDimensionsToDot
 
     let totalDotProduct = 0
-    for(let i = 0; i < paddedEmbedding.length; i += numDimensionsToDot){
-        const subEmbedding = paddedEmbedding.slice(i, i + numDimensionsToDot)
-        const quantizedInput = quantizeVector(subEmbedding)
-        const embeddingDotProduct = calcualteDotProduct(quantizedInput);
+    for(let subEmbeddingIdx = 0; subEmbeddingIdx < numSubEmbeddings; subEmbeddingIdx++){
+        const embeddingDotProduct = calculateDotProduct(subEmbeddingIdx);
         totalDotProduct += embeddingDotProduct;
     }
 
