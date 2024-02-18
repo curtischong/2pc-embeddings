@@ -28,6 +28,7 @@ export default function ToggleBeacon() {
         uuid = generateUuidV4();
         localStorage.setItem('uuid', uuid);
       }
+      console.log(uuid);
     })
 
         
@@ -44,28 +45,45 @@ export default function ToggleBeacon() {
         
     };
 
+    ws.onopen = function(event) {
+        if (beaconActive)
+        ws.send(JSON.stringify({
+            uuid: uuid,
+            message: 'connect'
+        }));
+    }
+
+    ws.onclose = function(event) {
+        ws.send(JSON.stringify({
+            uuid: uuid,
+            message: 'disconnect'
+        }));
+    }
+
     const toggleBeacon = () => {
 
         // Beacon is Active -- UHH JANK
         if (!beaconActive) {
             console.log('connect');
-            if (ws)
-            ws.send(JSON.stringify({
-                uuid: uuid,
-                message: 'connect'
-            }));
+            try {
+                if (ws)
+                ws.send(JSON.stringify({
+                    uuid: uuid,
+                    message: 'connect'
+                }));
+            } catch {}
         } else {
             console.log('disconnect');
-            if (ws)
-            ws.send(JSON.stringify({
-                uuid: uuid,
-                message: 'disconnect'
-            }));
+            try {
+                if (ws)
+                ws.send(JSON.stringify({
+                    uuid: uuid,
+                    message: 'disconnect'
+                }));
+            } catch {}
         }
         setBeaconActive(!beaconActive);
     };
-    localStorage.setItem('embedding', JSON.stringify([1,1,1,1,1,1,1,1,1,1]))
-
 
     // return () => {
     //   ws.close()

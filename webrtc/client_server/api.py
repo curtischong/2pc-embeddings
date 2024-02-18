@@ -54,24 +54,14 @@ async def share_embedding(new_uuid: str):
         except: pass
 
 async def share_one(source_uuid: str, target_uuid: str):
-    source = connected_devices[source_uuid]
-    print(target_uuid, connected_devices.keys())
+    source = connected_devices[source_uuid] 
     target = connected_devices[target_uuid]
 
     coros = []
-    print('test1')
-    try:
-        source.websocket.send_text(f"connected to: {target_uuid}\n" + json.dumps(target.embedding))
+    try: await source.websocket.send_text(f"connected to: {target_uuid}\n" + json.dumps(target.embedding))
     except Exception as e: print(e)
-    print('test1')
-    try:
-        target.websocket.send_text(f"connected to: {source_uuid}\n" + json.dumps(source.embedding))
+    try: await target.websocket.send_text(f"connected to: {source_uuid}\n" + json.dumps(source.embedding))
     except Exception as e: print(e)
-    print('test1')
-
-    for coro in coros:
-        try: await coro
-        except: pass
 
 async def broadcast():
     known_hosts_data = lambda ignore_uuid: {
@@ -114,7 +104,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 except: pass
                 await broadcast()
             elif data.message.startswith('share'):
-                other_uuid = data.message[7:]
+                other_uuid = data.message[6:]
                 await share_one(data.uuid, other_uuid)
 
     except Exception as e:
