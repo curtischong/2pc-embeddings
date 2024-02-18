@@ -1,11 +1,16 @@
 import { MessageType } from '@/types';
 import React, { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { MessageType } from '../types';
 import { aliceCalcFinalSum, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 
+interface Props{
+  currentPerson: string;
+  setCurrentPerson: (person: string) => void;
+  setProfile: (profile: string) => void;
+}
 
-export const WebSocketDemo = ({currentPerson, setCurrentPerson,  setProfile}) => {
+
+export const WebSocketDemo = ({currentPerson, setCurrentPerson, setProfile} : Props) => {
   //Public API that will echo messages sent to it back to the client
   const [socketUrl, setSocketUrl] = useState('ws://localhost:8080');
   const [messageHistory, setMessageHistory] = useState([]);
@@ -14,15 +19,15 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson,  setProfile}) =>
 
   useEffect(() => {
     // TODO: move this
-    localstorage.setItem('embedding', [1,1,1,1,1,1,1,1,1,1])
+    localStorage.setItem('embedding', JSON.stringify([1,1,1,1,1,1,1,1,1,1]))
 
 
     if (lastMessage !== null) {
       console.log('message received:', lastMessage , 'From', currentPerson)
       // keep alice as alice and bob as bob
-      setMessageHistory((prev) => prev.concat(lastMessage));
-
       const message = lastMessage as any
+      setMessageHistory((prev) => prev.concat(message));
+
       const messageType = message.messageType
       switch (messageType) {
         case MessageType.AliceInit2pc:
