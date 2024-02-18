@@ -185,6 +185,7 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
             x1: aliceOtVals.x1,
         }
     }
+    console.log("bobOtInputs", bobOtInputs)
 
     toStorage("labelledCircuit", labelledCircuit)
     toStorage("aliceOtInputs", aliceOtInputs)
@@ -244,7 +245,6 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     }
     toStorage("bobVKVals", bobVKVals)
     toStorage("bobInputs", bobInputs)
-    console.log("bobInputs_yay", bobInputs)
     // TODO: save to localStorage: aliceVVals
     sendMessage({
         aliceVVals,
@@ -278,7 +278,7 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
     console.log("bobResolveInputs")
     const bobInputs = fromStorage("bobInputs") as NamedInputOutput
     const bobVKVals = fromStorage("bobVKVals") as BobVKVals
-    const bobOTInputs = fromStorage("bobOTInputs") as BobOTInputs
+    const bobOTInputs = fromStorage("bobOtInputs") as BobOTInputs
     const garbledCircuit = fromStorage("garbledCircuit") as GarbledTable[]
     const aliceInputLabels = fromStorage("aliceInputLabels") as NamedLabel
     console.log("bobInputs", bobInputs)

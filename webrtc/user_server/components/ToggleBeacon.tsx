@@ -49,7 +49,7 @@ export default function ToggleBeacon() {
         uuid = generateUuidV4();
         localStorage.setItem('uuid', uuid);
       }
-      console.log(uuid);
+    //   console.log(uuid);
     }) // DO NOT add ,[]. uuid will NOT be set
 
         
@@ -109,9 +109,6 @@ export default function ToggleBeacon() {
             // console.log("messageType", messageType)
             switch (messageType) {
             case MessageType.AliceInit2pc:
-                localStorage.setItem('bobUUID', message.target_uuid)
-                localStorage.setItem('aliceUUID', message.uuid)
-
                 // setCurrentPerson('Bob')
                 bobReceive2pc(message.garbledCircuit, message.bobOtInputs, message.aliceInputLabels, message.subEmbeddingIdx, sendAliceMessage)
                 break;
@@ -119,7 +116,7 @@ export default function ToggleBeacon() {
                 aliceReceiveVFromBob(message.aliceVVals, sendBobMessage)
                 break;
             case MessageType.AliceReceiveVFromBob:
-                bobResolveInputs(message.bobVVals, sendAliceMessage)
+                bobResolveInputs(message.bobMVals, sendAliceMessage)
                 break;
             case MessageType.BobResolveInputs:
                 aliceCalcFinalSum(message.outputLabels)
@@ -135,7 +132,7 @@ export default function ToggleBeacon() {
     };
 
     ws.onopen = function(event) {
-        console.log("onopen")
+        // console.log("onopen")
         if (beaconActive)
         ws.send(JSON.stringify({
             uuid: uuid,
@@ -144,7 +141,7 @@ export default function ToggleBeacon() {
     }
 
     ws.onclose = function(event) {
-        console.log("onclose")
+        // console.log("onclose")
         ws.send(JSON.stringify({
             uuid: uuid,
             message: 'disconnect'
