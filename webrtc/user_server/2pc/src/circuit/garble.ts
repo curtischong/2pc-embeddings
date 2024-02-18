@@ -52,9 +52,9 @@ function labelWires(
   labelledCircuit: Labels,
   size: number = 256,
 ): { labels: Labels; labelledTable: LabelledTable } {
-  console.log(
-    `garble -> gate:${gateIndex} type:${gateName} in:${inNames} out:${outName}`,
-  );
+  // console.log(
+  //   `garble -> gate:${gateIndex} type:${gateName} in:${inNames} out:${outName}`,
+  // );
 
   const inputValues: InputValue[][] | InputValue[] = cartesianProduct(
     ...Array(inNames.length).fill(INPUT_VALUES),
@@ -90,11 +90,11 @@ function labelWires(
   const outputLabels = generateLabelPair(size);
   labels[outName] = outputLabels;
 
-  for (const [name, values] of Object.entries(labels)) {
-    for (const value in values) {
-      console.log(`label -> name:${name} label:${value}=${values[value]}`);
-    }
-  }
+  // for (const [name, values] of Object.entries(labels)) {
+  //   for (const value in values) {
+  //     console.log(`label -> name:${name} label:${value}=${values[value]}`);
+  //   }
+  // }
 
   const labelledTable = truthTable.map((outValue, i) => {
     const result = [];
