@@ -52,9 +52,9 @@ function labelWires(
   labelledCircuit: Labels,
   size: number = 256,
 ): { labels: Labels; labelledTable: LabelledTable } {
-  console.log(
-    `garble -> gate:${gateIndex} type:${gateName} in:${inNames} out:${outName}`,
-  );
+  // console.log(
+  //   `garble -> gate:${gateIndex} type:${gateName} in:${inNames} out:${outName}`,
+  // );
 
   const inputValues: InputValue[][] | InputValue[] = cartesianProduct(
     ...Array(inNames.length).fill(INPUT_VALUES),
@@ -90,11 +90,11 @@ function labelWires(
   const outputLabels = generateLabelPair(size);
   labels[outName] = outputLabels;
 
-  for (const [name, values] of Object.entries(labels)) {
-    for (const value in values) {
-      console.log(`label -> name:${name} label:${value}=${values[value]}`);
-    }
-  }
+  // for (const [name, values] of Object.entries(labels)) {
+  //   for (const value in values) {
+  //     console.log(`label -> name:${name} label:${value}=${values[value]}`);
+  //   }
+  // }
 
   const labelledTable = truthTable.map((outValue, i) => {
     const result = [];
@@ -127,7 +127,7 @@ export function getCombinedKey(labels: string[]): {
     ? getLeastSignificantBit(Buffer.from(labels[1], "hex"))
     : undefined;
 
-  const hash = createHash("SHA3-256");
+  const hash = createHash("sha256");
 
   labels.sort(); // sort labels so that the order we receive them in does not change the hash
   for (const label of labels) {

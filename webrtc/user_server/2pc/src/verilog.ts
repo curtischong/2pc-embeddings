@@ -67,11 +67,12 @@ export function parseVerilog(input: string): {
     }
   }
 
-  for (const gate in circuit) {
-    console.log(
-      `parse verilog -> gate:${gate} ${JSON.stringify(circuit[gate])}`,
-    );
-  }
+  // for (const gate in circuit) {
+  //   console.log(
+  //     `parse verilog -> gate:${gate} ${JSON.stringify(circuit[gate])}`,
+  //   );
+  // }
+  console.log("finished parsing verilog file")
 
   return { circuit, outputNames };
 }

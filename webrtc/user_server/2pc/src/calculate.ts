@@ -1,8 +1,8 @@
-import { generateKeyPairSync } from "crypto";
 import * as ot from "./oblivious-transfer";
-import { getJwkInt, getNthBit } from "./utils";
+import { base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit, verifyRSA } from "./utils";
 import { InputValue } from "./circuit/gates";
 import { Circuit, garbleCircuit, GarbledTable, Labels, NamedLabel } from "./circuit/garble";
+import { MessageType } from "../../types"
 import {
   evalGarbledCircuit,
   resolveOutputLabels,
@@ -10,6 +10,7 @@ import {
 } from "./circuit/evaluate";
 import { parseVerilog } from "./verilog";
 import { circuitStr } from "./circuitStr";
+import { SendMessage } from "react-use-websocket";
 
 const numDimensionsToDot = 10
 type AliceOTVals = {
@@ -31,26 +32,68 @@ type BobOTVals = {
 
 type AliceOTInputs = { [key: string]: AliceOTVals };
 type BobOTInputs = { [key: string]: BobOTVals };
-function ot_alice1(
+
+async function generateRsaKeyPair() {
+  const keyPair = await window.crypto.subtle.generateKey(
+    {
+      name: "RSA-OAEP",
+      modulusLength: 2048, // Can be 1024, 2048, or 4096
+      publicExponent: new Uint8Array([1, 0, 1]), // 65537
+      hash: "SHA-256",
+    },
+    true, // whether the key is extractable (i.e., can be exported)
+    ["encrypt", "decrypt"]
+  );
+
+  const publicKey = await window.crypto.subtle.exportKey(
+    "jwk", // JSON Web Key format
+    keyPair.publicKey
+  );
+
+  // Public key parts
+//   console.log('Public key parts:');
+//   console.log('Modulus (n):', publicKey.n); // Base64url-encoded
+//   console.log('Exponent (e):', publicKey.e); // Base64url-encoded
+
+  // Assuming the environment allows private key export
+  const privateKey = await window.crypto.subtle.exportKey("jwk", keyPair.privateKey);
+
+  // Private key parts
+//   console.log('Private key parts:');
+//   console.log('Modulus (n):', privateKey.n); // Same as public key
+//   console.log('Private Exponent (d):', privateKey.d); // Base64url-encoded
+
+  // TODO: verify these are the keys
+  return {
+    e: base64urlToBigInt(publicKey.e),
+    N: base64urlToBigInt(publicKey.n),
+    d: base64urlToBigInt(privateKey.d)
+  }
+}
+
+async function ot_alice1(
     inputName: string,
     labelledCircuit: Labels, // Alice
-):AliceOTVals {
+):Promise<AliceOTVals> {
 //   console.log(`oblivious transfer -> value:${inputName}=${inputValue}`);
 
-  // ALICE
-  const { publicKey, privateKey } = generateKeyPairSync("rsa", {
-    modulusLength: 2048,
-  });
+// ALICE
+// const { publicKey, privateKey } = generateKeyPairSync("rsa", {
+//     modulusLength: 2048,
+//   });
 
-  const pubkey = publicKey.export({ format: "jwk" });
-  const privkey = privateKey.export({ format: "jwk" });
+//   const pubkey = publicKey.export({ format: "jwk" });
+//   const privkey = privateKey.export({ format: "jwk" });
 
   const m0 = Buffer.from(labelledCircuit[inputName][0], "utf-8");
   const m1 = Buffer.from(labelledCircuit[inputName][1], "utf-8");
 
-  const e = getJwkInt(pubkey.e as string);
-  const N = getJwkInt(pubkey.n as string);
-  const d = getJwkInt(privkey.d as string);
+//   const e = getJwkInt(pubkey.e as string);
+//   const N = getJwkInt(pubkey.n as string);
+//   const d = getJwkInt(privkey.d as string);
+    const {e,N,d} = await generateRsaKeyPair()
+    // verifyRSA(e, N, d) // it works!
+
 
   const { x0, x1 } = ot.otSend1();
   return {
@@ -89,7 +132,9 @@ function ot_bob2(
 
 const { circuit, outputNames } = parseVerilog(circuitStr);
 
-const aliceInit2pc = (subEmbeddingIdx: number) => {
+const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: SendMessage) => {
+    console.log("aliceInit2pc")
+    clearStorage();
     // ALICE
     const {
     labelledCircuit,
@@ -103,14 +148,14 @@ const aliceInit2pc = (subEmbeddingIdx: number) => {
         aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
     }
 
-    // TODO: get subEmbedding
-    // const quantizedInput = quantizeVector(subEmbedding)
-
-    // const subEmbedding = subEmbeddings[subEmbeddingIdx]
+    // const subEmbedding = getSubEmbedding(subEmbeddingIdx)
     // for(let dim = 0; dim < numDimensionsToDot; dim++) {
     //     for(let bit = 0; bit < 4; bit++) {
     //         aliceInputs[`vectorA_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
     //     }
+    // }
+    // for(let i = 0; i < numDimensionsToDot; i++){
+    //     aliceInputs[`vectorC_${i}`] = subEmbedding.isPositive[i]
     // }
 
     const aliceInputLabels = Object.entries(aliceInputs).reduce(
@@ -130,7 +175,7 @@ const aliceInit2pc = (subEmbeddingIdx: number) => {
     // we already know that bob needs these inputs. so just send it in the starting packet.
     for (let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
-        const aliceOtVals = ot_alice1(inputName, labelledCircuit);
+        const aliceOtVals = await ot_alice1(inputName, labelledCircuit);
         aliceOtInputs[inputName] = aliceOtVals
 
         bobOtInputs[inputName] = {
@@ -141,10 +186,14 @@ const aliceInit2pc = (subEmbeddingIdx: number) => {
         }
     }
 
-    // send the OT data to bob
-    // send(garbledCircuit, bobOtInputs, aliceInputLabels, subEmbeddingIdx)
+    toStorage("labelledCircuit", labelledCircuit)
+    toStorage("aliceOtInputs", aliceOtInputs)
+    toStorage("subEmbeddingIdx", subEmbeddingIdx)
 
-    // TODO: setup the xor
+    // send the OT data to bob
+    sendToBob({
+        garbledCircuit, bobOtInputs, aliceInputLabels, subEmbeddingIdx
+    }, MessageType.AliceInit2pc, sendMessage)
 }
 
 interface BobVK {
@@ -160,7 +209,12 @@ interface AliceVVals{
     [inputName: string]: bigint
 }
 
-const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx:number) => {
+const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, aliceInputLabels: NamedLabel, subEmbeddingIdx: number, sendMessage: SendMessage) => {
+    console.log("bobReceive2pc")
+    toStorage("garbledCircuit", garbledCircuit)
+    toStorage("bobOtInputs", bobOtInputs)
+    toStorage("aliceInputLabels", aliceInputLabels)
+    toStorage("subEmbeddingIdx", subEmbeddingIdx)
     // BOB
     const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
@@ -168,11 +222,14 @@ const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx:number) => {
         bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
     }
 
-    // const subEmbedding = subEmbeddings[subEmbeddingIdx]
+    // const subEmbedding = getSubEmbedding(subEmbeddingIdx)
     // for(let dim = 0; dim < numDimensionsToDot; dim++) {
     //     for(let bit = 0; bit < 4; bit++) {
     //         bobInputs[`vectorB_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
     //     }
+    // }
+    // for(let i = 0; i < numDimensionsToDot; i++){
+    //     bobInputs[`vectorD_${i}`] = subEmbedding.isPositive[i]
     // }
 
     const bobVKVals: BobVKVals = {}
@@ -180,11 +237,16 @@ const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx:number) => {
 
     for(let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
-        const { v, k } = ot_bob1(bobInputs[inputName], ot_bob_input[inputName]);
+        const { v, k } = ot_bob1(bobInputs[inputName], bobOtInputs[inputName]);
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
     }
-    // sendToAlice(aliceVals)
+    toStorage("bobVKVals", bobVKVals)
+    toStorage("bobInputs", bobInputs)
+    // TODO: save to localStorage: aliceVVals
+    sendToAlice({
+        aliceVVals,
+    }, MessageType.BobReceive2pc, sendMessage)
 }
 
 interface mVals {
@@ -195,19 +257,27 @@ interface BobMVals {
     [bobInputName: string]: mVals
 }
 
-const aliceReceiveVFromBob = (aliceVVals:AliceVVals, aliceOtInputs:AliceOTInputs) => {
+const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: SendMessage) => {
+    console.log("aliceReceiveVFromBob")
+    const aliceOtInputs = fromStorage("aliceOtInputs") as AliceOTInputs
     const bobMVals: BobMVals = {}
     for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
         // const { m0k, m1k } = ot_alice2(bobV, aliceOtVals);
         // we need to send this back to bob: const { m0k, m1k } = 
         bobMVals[inputName] = ot_alice2(aliceVVals[inputName], aliceOtVals)
     }
-    // send(bobMVals)
+    sendToBob({
+        bobMVals
+    }, MessageType.AliceReceiveVFromBob, sendMessage)
 }
 
-const bobResolveInputs = (bobMVals: BobMVals, bobInputs: NamedInputOutput,
-    bobOTInputs: BobOTInputs, bobVKVals: BobVKVals, garbledCircuit: GarbledTable[],
-    aliceInputLabels:NamedLabel) => {
+const bobResolveInputs = (bobMVals: BobMVals, sendMessage: SendMessage) => {
+    console.log("bobResolveInputs")
+    const bobInputs = fromStorage("bobInputs") as NamedInputOutput
+    const bobVKVals = fromStorage("bobVKVals") as BobVKVals
+    const bobOTInputs = fromStorage("bobOTInputs") as BobOTInputs
+    const garbledCircuit = fromStorage("garbledCircuit") as GarbledTable[]
+    const aliceInputLabels = fromStorage("aliceInputLabels") as NamedLabel
 
     const bobInputLabels:NamedLabel = {}
     for(let i = 0; i < 32; i++) {
@@ -229,17 +299,35 @@ const bobResolveInputs = (bobMVals: BobMVals, bobInputs: NamedInputOutput,
     ); // -> Bob will send to Alice
     console.log("output labels ->", JSON.stringify(outputLabels));
     // sendToAlice(outputLabels)
+    sendToAlice({
+        outputLabels
+    }, MessageType.BobResolveInputs, sendMessage)
 }
 
 // the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
 // to a 1 or a 0
 // This is why we need to do one extra step to resolve the output labels. We can avoid this if Alice sends the output labels to bob at the start.
-const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
+const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
+    console.log("aliceCalcFinalSum")
+    const labelledCircuit = fromStorage("labelledCircuit") as Labels
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
 
-    // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
+
+    // // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
+    // let finalSum = 0 
+    // for(let i = 0; i < numDimensionsToDot; i++){
+    //     const isPositive = outputs[`xorResult_${i}`]
+    //     let indexSum = 0;
+    //     for(let j = 0; j < 4; j++){
+    //         const jthBit = outputs[`result_${i}`]
+    //         indexSum += jthBit * (2**j) // TODO: figure out endian
+    //     }
+    //     const scaledSum = indexSum / 15
+    //     finalSum += isPositive ? scaledSum : -scaledSum
+    // }
+    // return finalSum
 }
 
 
@@ -257,16 +345,16 @@ const quantizeTo4Bits = (value: number): number => {
     // Scale the value to the range 0 to 15 and round it
     const quantized = Math.round(value * 15);
   
-    return quantized;
+    return quantized >= 0 ? quantized : -quantized;
   }
 
 interface QuantizedInput {
-    isPositive: boolean[],
+    isPositive: number[],
     quantized: number[]
 }
 
 const quantizeVector = (embedding:number[]): QuantizedInput => {
-    const isPositive = embedding.map((x) => x > 0 ? true : false)
+    const isPositive = embedding.map((x) => x > 0 ? 1 : 0)
     const quantized = embedding.map(quantizeTo4Bits)
 
     return {
@@ -275,36 +363,68 @@ const quantizeVector = (embedding:number[]): QuantizedInput => {
     }
 }
 
-const calculateDotProduct = (subEmbeddingIdx:number):number => {
+const calculateDotProduct = (subEmbeddingIdx:number, sendMessage:SendMessage):number => {
     // TODO: init 2PC
+    aliceInit2pc(subEmbeddingIdx, sendMessage);
+    // TODO: return a value one all of the embeddings is finished
     return 0
 }
 
-const getSubEmbedding = (subEmbeddingIdx: number) => {
-    const embedding = [1,2,3,4]
+const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
+    const embedding = fromStorage("embedding") as number[]
     // pad embedding to be a multiple of numDimensionsToDot
     const padding = new Array(numDimensionsToDot - (embedding.length % numDimensionsToDot)).fill(0)
     const paddedEmbedding = embedding.concat(padding)
     const subEmbedding = paddedEmbedding.slice(subEmbeddingIdx*numDimensionsToDot, subEmbeddingIdx*numDimensionsToDot + numDimensionsToDot)
-    return subEmbedding
+    return quantizeVector(subEmbedding)
 }
 
-const aliceComputeDotProduct = () => {
-    const embedding = [1,2,3,4]
+// TODO: figure this out
+const aliceComputeDotProduct = (sendMessage: SendMessage) => {
+    const embedding = fromStorage("embedding") as number[]
     // pad embedding to be a multiple of numDimensionsToDot
-    const padding = new Array(numDimensionsToDot - (embedding.length % numDimensionsToDot)).fill(0)
-    const paddedEmbedding = embedding.concat(padding)
-    const numSubEmbeddings = paddedEmbedding.length / numDimensionsToDot
+    const paddedEmbeddingLen = embedding.length + (numDimensionsToDot - (embedding.length % numDimensionsToDot))
+    const numSubEmbeddings = paddedEmbeddingLen / numDimensionsToDot
 
     let totalDotProduct = 0
     for(let subEmbeddingIdx = 0; subEmbeddingIdx < numSubEmbeddings; subEmbeddingIdx++){
-        const embeddingDotProduct = calculateDotProduct(subEmbeddingIdx);
+        const embeddingDotProduct = calculateDotProduct(subEmbeddingIdx, sendMessage);
         totalDotProduct += embeddingDotProduct;
     }
 
-    // TODO:
-    // sendToBob(totalDotProduct)
+    sendToBob({totalDotProduct}, MessageType.AliceComputeDotProduct, sendMessage)
     return totalDotProduct;
 }
 
-export { aliceComputeDotProduct, aliceInit2pc, bobReceive2pc, aliceReceiveVFromBob, bobResolveInputs, aliceResolve2pc};
+const sendToAlice = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
+    // const aliceIp = get from local storage
+    sendMessage({
+        ...jsonObj,
+        messageType
+    })
+}
+
+const sendToBob = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
+    sendMessage({
+        ...jsonObj,
+        messageType
+    })
+}
+
+const clearStorage = () => {
+    const savedToStorage = ["labelledCircuit", "aliceOtInputs", "subEmbeddingIdx", "garbledCircuit", "bobOtInputs", "aliceInputLabels", "bobVKVals", "bobInputs"]
+    for(const key of savedToStorage){
+        localStorage.removeItem(key)
+    }
+}
+
+BigInt.prototype.toJSON = function() { return this.toString() }
+const toStorage = (key:string, val:any) => {
+    localStorage.setItem(key, JSON.stringify(val));
+}
+
+const fromStorage = (key:string) => {
+    return JSON.parse(localStorage.getItem(key));
+}
+
+export { aliceComputeDotProduct, aliceInit2pc, bobReceive2pc, aliceReceiveVFromBob, bobResolveInputs, aliceCalcFinalSum};
