@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
 
 import json
 from pydantic import BaseModel
@@ -7,47 +8,63 @@ from embeddings import generate_embeddings
 
 app = FastAPI()
 
-# Set up CORS
-origins = ["http://localhost:3000"]  # Add the origins you want to allow here
-
+# Allow all origins, methods, and headers for CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
 )
 
-known_ip = set()
+# # Set up CORS
+# origins = ["http://localhost:3000"]  # Add the origins you want to allow here
 
-@app.websocket("/connect")
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["GET", "POST"],
+#     allow_headers=["*"],
+# )
+
+connected_devices = {}
+
+class WSResponse(BaseModel):
+    uuid: str
+    message: str
+
+async def share_embedding(new_uuid: str):
+    new_websocket = connected_devices[new_uuid]
+    coros = []
+    for uuid, websocket in connected_devices.items():
+        if uuid == new_uuid: continue
+        coros.append(websocket.send_text(f"new uuid joined: {new_uuid}"))
+        coros.append(new_websocket.send_text(f"connected with uuid: {uuid}"))
+    # await asyncio.gather(coros)
+    for coro in coros:
+        await coro
+
+@app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     '''everytime /connect endpoint receives a msg, it sends the updated known_ip list'''
     await websocket.accept()
     client_host = websocket.client.host
-    known_ip.add(client_host)
     print(f'Client connected: {client_host}')
     while True:
         data = await websocket.receive_text()
+        data = WSResponse(**json.loads(data))
+        if data.message == 'connect':
+            connected_devices[data.uuid] = websocket
+            await share_embedding(data.uuid)
+        elif data.message == 'disconnect':
+            try: del connected_devices[data.uuid]
+            except: pass
+
         known_hosts_data = {
-            'known_ip': list(known_ip)
+            'num_clients': len(connected_devices)
         }
         await websocket.send_text(json.dumps(known_hosts_data))
-
-@app.websocket("/disconnect")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    client_host = websocket.client.host
-    try: known_ip.remove(client_host)
-    except: return
-    print(f'Client disconnected: {client_host}')
-    while True:
-        data = await websocket.receive_text()
-        known_ip_data = {
-            'status': True
-        }
-        await websocket.send_text(json.dumps(known_ip_data))
-
 
 class EmbeddingsData(BaseModel):
     MBTI: str
@@ -59,3 +76,6 @@ async def create_embeddings(data: EmbeddingsData) -> dict[str, list]:
     embed_list = generate_embeddings(data.dict())
     return {"embeddings": embed_list}
     
+@app.get('/test')
+async def test():
+    return 'test'
