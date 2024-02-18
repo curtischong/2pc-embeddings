@@ -307,3 +307,4 @@ const aliceComputeDotProduct = () => {
     return totalDotProduct;
 }
 
+export { aliceComputeDotProduct, aliceInit2pc, bobReceive2pc, aliceReceiveVFromBob, bobResolveInputs, aliceResolve2pc};
