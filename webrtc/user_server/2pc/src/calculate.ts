@@ -156,7 +156,6 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     for(let i = 0; i < numDimensionsToDot; i++){
         aliceInputs[`vectorC_${i}`] = subEmbedding.isPositive[i]
     }
-    console.log("aliceInputs", aliceInputs)
 
     const aliceInputLabels = Object.entries(aliceInputs).reduce(
     (inputs: NamedLabel, [name, value]) => {
@@ -198,8 +197,6 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
         }
     }
 
-    console.log("bobOtInputs", bobOtInputs)
-
     toStorage("labelledCircuit", labelledCircuit)
     toStorage("aliceOtInputs", aliceOtInputs)
     toStorage("subEmbeddingIdx", subEmbeddingIdx)
@@ -230,7 +227,6 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     toStorage("bobOtInputs", bobOtInputs)
     toStorage("aliceInputLabels", aliceInputLabels)
     toStorage("subEmbeddingIdx", subEmbeddingIdx)
-    console.log("bobOtInputs", bobOtInputs)
     // BOB
     const bobInputs: NamedInputOutput = {};
 
@@ -375,7 +371,6 @@ interface QuantizedInput {
 const quantizeVector = (embedding:number[]): QuantizedInput => {
     const isPositive = embedding.map((x) => x > 0 ? 1 : 0)
     const quantized = embedding.map(quantizeTo4Bits)
-    console.log("isPositive", isPositive)
 
     return {
         isPositive,
