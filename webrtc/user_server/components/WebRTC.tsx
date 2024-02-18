@@ -49,7 +49,7 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
         case MessageType.BobResolveInputs:
           aliceCalcFinalSum(message.outputLabels)
           break;
-        case MessageType.AliceComputeDotProduct:
+        case MessageType.AliceSumAllSubEmbeddings:
           console.log('Alice computed dot product:', message.totalDotProduct)
           break;
         default:

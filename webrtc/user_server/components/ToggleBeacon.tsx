@@ -123,8 +123,9 @@ export default function ToggleBeacon() {
                     // TODO: use embeddings
                     aliceCalcFinalSum(message.outputLabels, sendBobMessage)
                     break;
-                case MessageType.AliceComputeDotProduct:
+                case MessageType.AliceSumAllSubEmbeddings:
                     console.log('Alice computed dot product:', message.totalDotProduct)
+                    window.location.href = '/match?dotProduct=' + message.totalDotProduct.toString();
                     break;
                 default:
                     console.log("unhandled msgType", messageType)
@@ -221,9 +222,12 @@ export default function ToggleBeacon() {
 
             {beaconActive && knownUUIDS.map((uuid, index) => (
                 <div key={uuid} className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
-                    <Link className="" href="/match">
+                    <button onClick={() => connectWithOther(uuid)}>
                         Check compatibility with {localStorage.getItem('bobUUID') == uuid ? 'Bob' : 'Alice'}
-                    </Link>
+                    </button>
+                    {/* <Link className="" href="/match">
+                        Check compatibility with {localStorage.getItem('bobUUID') == uuid ? 'Bob' : 'Alice'}
+                    </Link> */}
                 </div>
             ))}
         </div>

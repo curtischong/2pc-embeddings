@@ -4,6 +4,6 @@ export enum MessageType {
     BobReceive2pc = "BobReceive2pc",
     AliceReceiveVFromBob= "aliceReceiveVFromBob",
     BobResolveInputs = "BobResolveInputs",
-    AliceComputeDotProduct = "AliceComputeDotProduct",
+    AliceSumAllSubEmbeddings = "AliceSumAllSubEmbeddings",
     EndConversation = 'EndConversation',
 }

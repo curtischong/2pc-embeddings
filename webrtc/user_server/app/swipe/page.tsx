@@ -61,34 +61,32 @@ export default function SwipeCards() {
             if (currentQuestionIndex === questions.length - 1) {
 
               const getProfile = async () => {
-                try {
-                  const response = await fetch('http://localhost:8000/embeddings', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    //  TODO: make form that lets you input this data from About Me section
-                    body: JSON.stringify(
-                      {
-                        "MBTI": "INFP - imaginative, open-minded, and curious. Loves exploring new ideas and values personal freedom.",
-                        "Love_Languages": "Quality Time, Words of Affirmation - enjoys deep conversations, feeling appreciated through words.",
-                        "Hobbies": "reading fantasy novels, hiking in nature, creative writing."
-                      }
-                    )
-                  });
-                  const data = await response.json();
-                  const embedding = JSON.stringify(data)
-                  // setResponseText(embedding);
-                  localStorage.setItem('embedding', embedding)
+                const response = await fetch('http://localhost:8000/embeddings', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  //  TODO: make form that lets you input this data from About Me section
+                  body: JSON.stringify(
+                    {
+                      "MBTI": "INFP - imaginative, open-minded, and curious. Loves exploring new ideas and values personal freedom.",
+                      "Love_Languages": "Quality Time, Words of Affirmation - enjoys deep conversations, feeling appreciated through words.",
+                      "Hobbies": "reading fantasy novels, hiking in nature, creative writing."
+                    }
+                  )
+                });
+                const data = await response.json();
+                console.log("data", data)
+                const embedding = JSON.stringify(data.embeddings.slice(0, 50))
+                // setResponseText(embedding);
+                localStorage.setItem('embedding', embedding)
 
-                } catch (error) {
-                  console.error('Error:', error);
-                }
               };
 
-              getProfile()
+              getProfile().then(() => {
+                window.location.href = '/landing';
+              })
 
-              window.location.href = '/landing';
             } else {
               swipe(1);
               console.log(currentQuestionIndex)

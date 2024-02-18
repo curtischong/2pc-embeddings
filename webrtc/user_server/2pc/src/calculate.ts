@@ -401,13 +401,14 @@ const sumAllSubEmbeddings = (sendMessage:any) => {
         totalDotProduct += segmentSum;
     }
     console.log("totalDotProduct", totalDotProduct)
-    sendMessage({totalDotProduct}, MessageType.AliceComputeDotProduct)
-    // TODO: call client somehow
+    sendMessage({totalDotProduct}, MessageType.AliceSumAllSubEmbeddings)
+    window.location.href = '/match?dotProduct=' + totalDotProduct.toString();
 }
 
 // TODO: figure this out
 const aliceComputeDotProduct = (sendMessage: any) => {
     const embedding = fromStorage("embedding") as number[]
+    console.log("embedding", embedding)
     // pad embedding to be a multiple of numDimensionsToDot
     const paddedEmbeddingLen = embedding.length + (numDimensionsToDot - (embedding.length % numDimensionsToDot))
     const numSubEmbeddings = paddedEmbeddingLen / numDimensionsToDot
