@@ -242,7 +242,19 @@ const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
 
-    // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
+
+    // // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
+    // let finalSum = 0 
+    // for(let i = 0; i < numDimensionsToDot; i++){
+    //     const isPositive = outputs[`xorResult_${i}`]
+    //     let indexSum = 0;
+    //     for(let j = 0; j < 4; j++){
+    //         const jthBit = outputs[`result_${i}`]
+    //         indexSum += jthBit * (2**j) // TODO: figure out endian
+    //     }
+    //     finalSum += isPositive ? indexSum : -indexSum
+    // }
+    // return finalSum
 }
 
 
