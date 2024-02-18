@@ -252,7 +252,8 @@ const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
     //         const jthBit = outputs[`result_${i}`]
     //         indexSum += jthBit * (2**j) // TODO: figure out endian
     //     }
-    //     finalSum += isPositive ? indexSum : -indexSum
+    //     const scaledSum = indexSum / 15
+    //     finalSum += isPositive ? scaledSum : -scaledSum
     // }
     // return finalSum
 }
@@ -272,7 +273,7 @@ const quantizeTo4Bits = (value: number): number => {
     // Scale the value to the range 0 to 15 and round it
     const quantized = Math.round(value * 15);
   
-    return quantized;
+    return quantized >= 0 ? quantized : -quantized;
   }
 
 interface QuantizedInput {
