@@ -1,5 +1,5 @@
 import * as ot from "./oblivious-transfer";
-import { b64ToBn, base64ToBigInt, base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit, verifyRSA } from "./utils";
+import { base64urlToBigInt, bufferToBigInt, getJwkInt, getNthBit, verifyRSA } from "./utils";
 import { InputValue } from "./circuit/gates";
 import { Circuit, garbleCircuit, GarbledTable, Labels, NamedLabel } from "./circuit/garble";
 import { MessageType } from "../../types"
@@ -133,6 +133,7 @@ function ot_bob2(
 const { circuit, outputNames } = parseVerilog(circuitStr);
 
 const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: SendMessage) => {
+    console.log("aliceInit2pc")
     clearStorage();
     // ALICE
     const {
@@ -209,6 +210,7 @@ interface AliceVVals{
 }
 
 const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, aliceInputLabels: NamedLabel, subEmbeddingIdx: number, sendMessage: SendMessage) => {
+    console.log("bobReceive2pc")
     toStorage("garbledCircuit", garbledCircuit)
     toStorage("bobOtInputs", bobOtInputs)
     toStorage("aliceInputLabels", aliceInputLabels)
@@ -256,6 +258,7 @@ interface BobMVals {
 }
 
 const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: SendMessage) => {
+    console.log("aliceReceiveVFromBob")
     const aliceOtInputs = fromStorage("aliceOtInputs") as AliceOTInputs
     const bobMVals: BobMVals = {}
     for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
@@ -269,6 +272,7 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: SendMessage) =
 }
 
 const bobResolveInputs = (bobMVals: BobMVals, sendMessage: SendMessage) => {
+    console.log("bobResolveInputs")
     const bobInputs = fromStorage("bobInputs") as NamedInputOutput
     const bobVKVals = fromStorage("bobVKVals") as BobVKVals
     const bobOTInputs = fromStorage("bobOTInputs") as BobOTInputs
@@ -304,6 +308,7 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: SendMessage) => {
 // to a 1 or a 0
 // This is why we need to do one extra step to resolve the output labels. We can avoid this if Alice sends the output labels to bob at the start.
 const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
+    console.log("aliceCalcFinalSum")
     const labelledCircuit = fromStorage("labelledCircuit") as Labels
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
@@ -393,9 +398,17 @@ const aliceComputeDotProduct = (sendMessage: SendMessage) => {
 
 const sendToAlice = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
     // const aliceIp = get from local storage
+    sendMessage({
+        ...jsonObj,
+        messageType
+    })
 }
 
 const sendToBob = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
+    sendMessage({
+        ...jsonObj,
+        messageType
+    })
 }
 
 const clearStorage = () => {
@@ -405,6 +418,7 @@ const clearStorage = () => {
     }
 }
 
+BigInt.prototype.toJSON = function() { return this.toString() }
 const toStorage = (key:string, val:any) => {
     localStorage.setItem(key, JSON.stringify(val));
 }
