@@ -87,7 +87,7 @@ function ot_bob2(
 
 
 // const { circuit, outputNames } = parseVerilog("../verilog/dotproduct/out.v");
-const { circuit, outputNames } = parseVerilog("../verilog/millionaire/out.v");
+const { circuit, outputNames } = parseVerilog("2pc/verilog/millionaire/out.v");
 
 const aliceInit2pc = (subEmbeddingIdx: number) => {
     // ALICE
