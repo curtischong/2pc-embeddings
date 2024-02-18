@@ -145,11 +145,7 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     } = garbleCircuit(circuit);
     // TODO(Curtis): send via bluetooth
 
-    // const aliceWealth = 2e6; // TODO: set subEmbedding
     const aliceInputs: NamedInputOutput = {};
-    // for (let i = 0; i < 32; i++) {
-    //     aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
-    // }
 
     const subEmbedding = getSubEmbedding(subEmbeddingIdx)
     for(let dim = 0; dim < numDimensionsToDot; dim++) {
@@ -160,6 +156,7 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     for(let i = 0; i < numDimensionsToDot; i++){
         aliceInputs[`vectorC_${i}`] = subEmbedding.isPositive[i]
     }
+    console.log("aliceInputs", aliceInputs)
 
     const aliceInputLabels = Object.entries(aliceInputs).reduce(
     (inputs: NamedLabel, [name, value]) => {
@@ -188,6 +185,19 @@ const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
             x1: aliceOtVals.x1,
         }
     }
+    for(let i = 0; i < numDimensionsToDot; i++){
+        const inputName = `vectorD_${i}`
+        const aliceOtVals = await ot_alice1(inputName, labelledCircuit);
+        aliceOtInputs[inputName] = aliceOtVals
+
+        bobOtInputs[inputName] = {
+            e: aliceOtVals.e,
+            N: aliceOtVals.N,
+            x0: aliceOtVals.x0,
+            x1: aliceOtVals.x1,
+        }
+    }
+
     console.log("bobOtInputs", bobOtInputs)
 
     toStorage("labelledCircuit", labelledCircuit)
@@ -220,12 +230,9 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     toStorage("bobOtInputs", bobOtInputs)
     toStorage("aliceInputLabels", aliceInputLabels)
     toStorage("subEmbeddingIdx", subEmbeddingIdx)
+    console.log("bobOtInputs", bobOtInputs)
     // BOB
-    const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
-    // for (let i = 0; i < 32; i++) {
-    //     bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
-    // }
 
     const subEmbedding = getSubEmbedding(subEmbeddingIdx)
     for(let dim = 0; dim < numDimensionsToDot; dim++) {
@@ -236,6 +243,7 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
     for(let i = 0; i < numDimensionsToDot; i++){
         bobInputs[`vectorD_${i}`] = subEmbedding.isPositive[i]
     }
+    console.log("bobInputs", bobInputs)
 
     const bobVKVals: BobVKVals = {}
     const aliceVVals: AliceVVals = {}
@@ -246,6 +254,13 @@ const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, 
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
     }
+    for(let i = 0; i < numDimensionsToDot; i++){
+        const inputName = `vectorD_${i}`
+        const { v, k } = ot_bob1(bobInputs[inputName], bobOtInputs[inputName]);
+        bobVKVals[inputName] = { v, k }
+        aliceVVals[inputName] = v
+    }
+
     toStorage("bobVKVals", bobVKVals)
     toStorage("bobInputs", bobInputs)
     // TODO: save to localStorage: aliceVVals
@@ -288,6 +303,11 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
     const bobInputLabels:NamedLabel = {}
     for(let i = 0; i < numDimensionsToDot * 4; i++) {
         const inputName = `vectorB_${i}`
+        const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
+        bobInputLabels[inputName] = m
+    }
+    for(let i = 0; i < numDimensionsToDot; i++) {
+        const inputName = `vectorD_${i}`
         const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
         bobInputLabels[inputName] = m
     }
