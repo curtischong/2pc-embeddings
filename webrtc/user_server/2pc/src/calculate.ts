@@ -315,15 +315,14 @@ const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
 
 
+    // let numOutputs = 12
     // // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
     // let finalSum = 0 
-    // for(let i = 0; i < numDimensionsToDot; i++){
+    // for(let i = 0; i < numOutputs; i++){
     //     const isPositive = outputs[`xorResult_${i}`]
     //     let indexSum = 0;
-    //     for(let j = 0; j < 4; j++){
-    //         const jthBit = outputs[`result_${i}`]
-    //         indexSum += jthBit * (2**j) // TODO: figure out endian
-    //     }
+//         const jthBit = outputs[`result_${i}`]
+//         indexSum += jthBit * (2**j)
     //     const scaledSum = indexSum / 15
     //     finalSum += isPositive ? scaledSum : -scaledSum
     // }
