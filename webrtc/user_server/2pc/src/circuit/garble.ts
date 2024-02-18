@@ -161,16 +161,74 @@ function encrypt(
   };
 }
 
+// // Convert hex string to ArrayBuffer
+// function hexStringToArrayBuffer(hexString) {
+//   const result = new Uint8Array(hexString.length / 2);
+//   for (let i = 0, j = 0; i < hexString.length; i += 2, j++) {
+//       result[j] = parseInt(hexString.substr(i, 2), 16);
+//   }
+//   return result.buffer;
+// }
+
+// export function decrypt2(
+//   key: string,
+//   iv: Buffer,
+//   tag: Buffer,
+//   encrypted: Buffer,
+// ):string {
+//     // Convert key and iv from hex to ArrayBuffer
+//   const keyBuffer = hexStringToArrayBuffer(keyHex);
+//   const ivBuffer = hexStringToArrayBuffer(ivHex);
+// }
+
+// const function convertHexKeyToCryptoKey(hexKey) {
+//   const rawKey = await hexStringToByteArray(hexKey);
+//   return window.crypto.subtle.importKey(
+//       "raw", // format of the key
+//       rawKey, // the key in ArrayBuffer format
+//       {   // algorithm details
+//           name: "AES-GCM",
+//       },
+//       false, // whether the key is extractable
+//       ["encrypt", "decrypt"] // what operations the key can be used for
+//   );
+// }
+
+
+// export function decrypt(
+//   key: string,
+//   iv: Buffer,
+//   tag: Buffer,
+//   encrypted: Buffer,
+// ): string {
+//   // const decipher = createDecipheriv("aes-256-gcm", Buffer.from(key, "hex"), iv);
+//   console.log("key", key)
+//   const decipher = window.crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
+//   console.log(decipher);
+//   // decipher.setAuthTag(tag);
+//   // let data = decipher.update(encrypted, undefined, "utf8");
+//   // data += decipher.final("utf8");
+//   // return data;
+//   return decipher
+// }
+
 export function decrypt(
   key: string,
   iv: Buffer,
   tag: Buffer,
   encrypted: Buffer,
 ): string {
-  const decipher = createDecipheriv("aes-256-gcm", Buffer.from(key, "hex"), iv);
+  // console.log("key", key)
+  const keyBuffer = Buffer.from(key, "hex");
+  // console.log("keyBuffer", keyBuffer, Buffer.isBuffer(keyBuffer))
+  iv = Buffer.from(iv);
+  // console.log("iv", iv,Buffer.isBuffer(iv))
+  const decipher = createDecipheriv("aes-256-gcm", keyBuffer, iv);
   decipher.setAuthTag(tag);
+  encrypted = Buffer.from(encrypted);
   let data = decipher.update(encrypted, undefined, "utf8");
-  data += decipher.final("utf8");
+  console.log("data", data)
+  // data += decipher.final("utf8");
   return data;
 }
 
