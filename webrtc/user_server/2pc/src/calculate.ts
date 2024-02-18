@@ -11,6 +11,7 @@ import {
 } from "./circuit/evaluate";
 import { parseVerilog } from "./verilog";
 import { circuitStr } from "./circuitStr";
+import { SendMessage } from "react-use-websocket";
 
 const numDimensionsToDot = 10
 type AliceOTVals = {
@@ -90,7 +91,7 @@ function ot_bob2(
 
 const { circuit, outputNames } = parseVerilog(circuitStr);
 
-const aliceInit2pc = (subEmbeddingIdx: number) => {
+const aliceInit2pc = (subEmbeddingIdx: number, sendMessage: SendMessage) => {
     // ALICE
     const {
     labelledCircuit,
@@ -142,10 +143,12 @@ const aliceInit2pc = (subEmbeddingIdx: number) => {
         }
     }
 
+    // TODO: save to localStorage: aliceOtInputs
+
     // send the OT data to bob
     sendToBob({
         garbledCircuit, bobOtInputs, aliceInputLabels, subEmbeddingIdx
-    }, MessageType.AliceInit2pc)
+    }, MessageType.AliceInit2pc, sendMessage)
 }
 
 interface BobVK {
@@ -161,7 +164,7 @@ interface AliceVVals{
     [inputName: string]: bigint
 }
 
-const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx: number) => {
+const bobReceive2pc = (bobOtInputs: BobOTInputs, subEmbeddingIdx: number) => {
     // BOB
     const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
@@ -184,13 +187,13 @@ const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx: number) => {
 
     for(let i = 0; i < 32; i++) {
         const inputName = `B_${i}`
-        const { v, k } = ot_bob1(bobInputs[inputName], ot_bob_input[inputName]);
+        const { v, k } = ot_bob1(bobInputs[inputName], bobOtInputs[inputName]);
         bobVKVals[inputName] = { v, k }
         aliceVVals[inputName] = v
     }
     // TODO: save to localStorage: aliceVVals
     sendToAlice({
-        bobVKVals,
+        aliceVVals,
     }, MessageType.BobReceive2pc)
 }
 
@@ -202,7 +205,8 @@ interface BobMVals {
     [bobInputName: string]: mVals
 }
 
-const aliceReceiveVFromBob = (aliceVVals:AliceVVals, aliceOtInputs:AliceOTInputs) => {
+const aliceReceiveVFromBob = (aliceVVals:AliceVVals) => {
+    const aliceOtInputs = {} // TODO: get from local storage
     const bobMVals: BobMVals = {}
     for(const [inputName, aliceOtVals] of Object.entries(aliceOtInputs)) {
         // const { m0k, m1k } = ot_alice2(bobV, aliceOtVals);
@@ -214,9 +218,10 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals, aliceOtInputs:AliceOTInputs
     }, MessageType.AliceReceiveVFromBob)
 }
 
-const bobResolveInputs = (bobMVals: BobMVals, bobInputs: NamedInputOutput,
+const bobResolveInputs = (bobMVals: BobMVals, 
     bobOTInputs: BobOTInputs, bobVKVals: BobVKVals, garbledCircuit: GarbledTable[],
     aliceInputLabels:NamedLabel) => {
+    const bobInputs: NamedInputOutput = {};// TODO: get from local storage
 
     const bobInputLabels:NamedLabel = {}
     for(let i = 0; i < 32; i++) {
@@ -246,7 +251,8 @@ const bobResolveInputs = (bobMVals: BobMVals, bobInputs: NamedInputOutput,
 // the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
 // to a 1 or a 0
 // This is why we need to do one extra step to resolve the output labels. We can avoid this if Alice sends the output labels to bob at the start.
-const aliceCalcFinalSum = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
+const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
+    const labelledCircuit: Labels = // TODO:
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
@@ -330,11 +336,11 @@ const aliceComputeDotProduct = () => {
     return totalDotProduct;
 }
 
-const sendToAlice = (jsonObj: any, messageType: MessageType) => {
+const sendToAlice = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
     // const aliceIp = get from local storage
 }
 
-const sendToBob = (jsonObj: any, messageType: MessageType) => {
+const sendToBob = (jsonObj: any, messageType: MessageType, sendMessage: SendMessage) => {
 }
 
 export { aliceComputeDotProduct, aliceInit2pc, bobReceive2pc, aliceReceiveVFromBob, bobResolveInputs, aliceCalcFinalSum};

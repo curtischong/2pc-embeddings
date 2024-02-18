@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { MessageType } from '../types';
+import { aliceCalcFinalSum, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 
 
 export const WebSocketDemo = ({currentPerson, setCurrentPerson}) => {
@@ -12,11 +14,32 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson}) => {
   useEffect(() => {
     if (lastMessage !== null) {
       console.log('message received:', lastMessage , 'From', currentPerson)
-      if (currentPerson === '') {
-        setCurrentPerson('Bob')
-      }
       // keep alice as alice and bob as bob
       setMessageHistory((prev) => prev.concat(lastMessage));
+
+      const message = lastMessage as any
+      const messageType = message.messageType
+      switch (messageType) {
+        case MessageType.AliceInit2pc:
+          setCurrentPerson('Bob')
+          bobReceive2pc(message.bobOtInputs, message.subEmbeddingIdx)
+          break;
+        case MessageType.BobReceive2pc:
+          aliceReceiveVFromBob(message.aliceVVals)
+          break;
+        case MessageType.AliceReceiveVFromBob:
+          bobResolveInputs(message.bobVVals)
+          break;
+        case MessageType.BobResolveInputs:
+          aliceCalcFinalSum(message.outputLabels)
+          break;
+        case MessageType.AliceComputeDotProduct:
+          console.log('Alice computed dot product:', message.totalDotProduct)
+          break;
+        default:
+          console.error('Unknown message type:', messageType)
+          break;
+      }
     }
   }, [lastMessage, setMessageHistory]);
 
