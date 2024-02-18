@@ -86,7 +86,7 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
     setMessages((prev) => [...prev, messageToSend]);
 
     if (inputRef.current) {
-      inputRef.current = '';
+
     }
     sendMessage(messageToSend.content);
 
@@ -105,7 +105,6 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
     sendMessage(MessageType.EndConversation)
     setMessages([])
     setCurrentPerson('')
-    inputRef.current.value = '';
   }
   return (
     <div className="flex flex-col h-screen bg-gray-100 w-3/5">
@@ -125,7 +124,7 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
         ))}
       </div>
       <div className="p-4">
-        <input type="text" onChange={e => inputRef.current = e.target.value} onKeyPress={e => { if (e.key === 'Enter') { handleClickSendMessage(); } }} ref={inputRef} className="w-full p-2 border border-gray-300 rounded" style={{ width: '100%', maxWidth: '800px' }} />
+        <input type="text" onChange={e => inputRef.current = e.target.value} onKeyPress={e => { if (e.key === 'Enter') { handleClickSendMessage(); } }} ref={inputRef} className="w-full p-2 border border-gray-300 rounded" />
       </div>
     </div>
   );
