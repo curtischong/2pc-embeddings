@@ -38,7 +38,7 @@ function evalGarbledTable(
   console.log(`\t-> inputs:${JSON.stringify(inputs)}`);
 
   const { key, label0lsb, label1lsb } = getCombinedKey(Object.values(inputs));
-  // console.log("key", key, "label0lsb", label0lsb, "label1lsb", label1lsb, "values", Object.values(inputs))
+  console.log("key", key, "label0lsb", label0lsb, "label1lsb", label1lsb, "values", Object.values(inputs))
 
 
   const row = garbledTable.find(
@@ -46,7 +46,6 @@ function evalGarbledTable(
   );
 
   if (!row){
-    // return "lol was empty";
     throw new Error("Valid row not found in garbled table");
   }
 
@@ -66,7 +65,6 @@ export function evalGarbledCircuit(
 
     const inputNames = circuit[i].inputs;
     const outputName = circuit[i].output;
-    console.log("inputNames", inputNames, "outputName", outputName)
 
     const garbledTable = garbledCircuit[i];
     const result = evalGarbledTable(
