@@ -132,7 +132,7 @@ function ot_bob2(
 
 const { circuit, outputNames } = parseVerilog(circuitStr);
 
-const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: SendMessage) => {
+const aliceInit2pc = async (subEmbeddingIdx: number, sendMessage: any) => {
     console.log("aliceInit2pc")
     clearStorage();
     // ALICE
@@ -209,7 +209,7 @@ interface AliceVVals{
     [inputName: string]: bigint
 }
 
-const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, aliceInputLabels: NamedLabel, subEmbeddingIdx: number, sendMessage: SendMessage) => {
+const bobReceive2pc = (garbledCircuit:GarbledTable[], bobOtInputs: BobOTInputs, aliceInputLabels: NamedLabel, subEmbeddingIdx: number, sendMessage: any) => {
     console.log("bobReceive2pc")
     toStorage("garbledCircuit", garbledCircuit)
     toStorage("bobOtInputs", bobOtInputs)
@@ -257,7 +257,7 @@ interface BobMVals {
     [bobInputName: string]: mVals
 }
 
-const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: SendMessage) => {
+const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: any) => {
     console.log("aliceReceiveVFromBob")
     const aliceOtInputs = fromStorage("aliceOtInputs") as AliceOTInputs
     const bobMVals: BobMVals = {}
@@ -271,7 +271,7 @@ const aliceReceiveVFromBob = (aliceVVals:AliceVVals, sendMessage: SendMessage) =
     }, MessageType.AliceReceiveVFromBob, sendMessage)
 }
 
-const bobResolveInputs = (bobMVals: BobMVals, sendMessage: SendMessage) => {
+const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
     console.log("bobResolveInputs")
     const bobInputs = fromStorage("bobInputs") as NamedInputOutput
     const bobVKVals = fromStorage("bobVKVals") as BobVKVals
@@ -315,15 +315,14 @@ const aliceCalcFinalSum = (outputLabels: NamedLabel) => {
     console.log(`output => ${JSON.stringify(outputs)}`); // -> Alice shares with Bob
 
 
+    // let numOutputs = 12
     // // NOTE: we do not send to bob. Since alice will be the one that gets the final dot product
     // let finalSum = 0 
-    // for(let i = 0; i < numDimensionsToDot; i++){
+    // for(let i = 0; i < numOutputs; i++){
     //     const isPositive = outputs[`xorResult_${i}`]
     //     let indexSum = 0;
-    //     for(let j = 0; j < 4; j++){
-    //         const jthBit = outputs[`result_${i}`]
-    //         indexSum += jthBit * (2**j) // TODO: figure out endian
-    //     }
+//         const jthBit = outputs[`result_${i}`]
+//         indexSum += jthBit * (2**j)
     //     const scaledSum = indexSum / 15
     //     finalSum += isPositive ? scaledSum : -scaledSum
     // }

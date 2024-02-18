@@ -1,7 +1,9 @@
 // pages/index.js
 import { randomUUID } from 'crypto';
 import Head from 'next/head';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { MessageType } from '../types';
+import { aliceCalcFinalSum, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 
 const SERVER_IP = 'localhost';
 
@@ -43,7 +45,6 @@ export default function ToggleBeacon() {
     };
 
     const toggleBeacon = () => {
-        setBeaconActive(!beaconActive);
 
         // Beacon is Active -- UHH JANK
         if (!beaconActive) {
@@ -61,7 +62,14 @@ export default function ToggleBeacon() {
                 message: 'disconnect'
             }));
         }
+        setBeaconActive(!beaconActive);
     };
+    localStorage.setItem('embedding', JSON.stringify([1,1,1,1,1,1,1,1,1,1]))
+
+
+    // return () => {
+    //   ws.close()
+    // }
 
     const connectWithOther = (target_uuid: string) => {
         ws.send(JSON.stringify({
