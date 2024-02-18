@@ -107,6 +107,9 @@ const receive2pcReq = (labelledCircuit: Labels, aliceInputLabels: NamedLabel, ga
     console.log("output labels ->", JSON.stringify(outputLabels));
 }
 
+// the reason why bob needs to send the outputLabels back to alice is because Bob doesn't know which labels correspond
+// to a 1 or a 0
+// This is why we need to do one extra step to resolve the output labels. We can avoid this if Alice sends the output labels to bob at the start.
 const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
     // ALICE
     const outputs = resolveOutputLabels(outputLabels, outputNames, labelledCircuit);
