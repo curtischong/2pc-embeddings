@@ -227,4 +227,15 @@ const aliceResolve2pc = (labelledCircuit: Labels, outputLabels: NamedLabel) => {
 //    - this gets bob the data needed to run the value through the circuit to get the result
 // 3) bob sends result to alice
 
+const quantizeVector = (embedding:number[]) => {
+    
+}
+
+const numDimensionsToDot = 10
+
+const aliceComputeDotProduct = () => {
+    const embedding = [1,2,3,4]
+    for(let i = 0; i < embedding.length; i += 20)
+    // 1) for each embedding, 
+}
 
