@@ -1,7 +1,7 @@
 import { MessageType } from '@/types';
 import React, { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { aliceCalcFinalSum, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
+import { aliceCalcFinalSum, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 
 interface Props{
   currentPerson: string;
@@ -151,6 +151,14 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson, setProfile} : Pr
       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
     >
       Click Me to Clear Conversation
+    </button>
+    <button 
+      onClick={() => {
+        aliceInit2pc(0, sendMessage)
+      }}
+      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+    >
+      Click Me to start the 2pc
     </button>
     <span>The WebSocket is currently {connectionStatus}</span>
 
