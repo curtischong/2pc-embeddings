@@ -3,14 +3,13 @@ import React, { useState, useCallback, useEffect } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { aliceCalcFinalSum, aliceInit2pc, aliceReceiveVFromBob, bobReceive2pc, bobResolveInputs } from '../2pc/src/calculate';
 
-interface Props{
+interface Props {
   currentPerson: string;
   setCurrentPerson: (person: string) => void;
-  setProfile: (profile: string) => void;
 }
 
 
-export const WebSocketDemo = ({currentPerson, setCurrentPerson, setProfile} : Props) => {
+export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
   //Public API that will echo messages sent to it back to the client
   const [socketUrl, setSocketUrl] = useState('ws://localhost:8080');
   const [messageHistory, setMessageHistory] = useState([]);
@@ -19,11 +18,11 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson, setProfile} : Pr
 
   useEffect(() => {
     // TODO: move this
-    localStorage.setItem('embedding', JSON.stringify([1,1,1,1,1,1,1,1,1,1]))
+    localStorage.setItem('embedding', JSON.stringify([1, 1, 1, 1, 1, 1, 1, 1, 1, 1]))
 
 
     if (lastMessage !== null) {
-      console.log('message received:', lastMessage , 'From', currentPerson)
+      console.log('message received:', lastMessage, 'From', currentPerson)
       // keep alice as alice and bob as bob
       const message = lastMessage as any
       setMessageHistory((prev) => prev.concat(message));
@@ -72,14 +71,14 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson, setProfile} : Pr
 
   const clearProfile = useCallback(() => {
     setCurrentPerson('')
-    setProfile('')
+
     localStorage.removeItem('profile')
     setMessageHistory([])
     // Clears the conversation on receiver end
-    sendMessage(MessageType.EndConversation);
+    // sendMessage(MessageType.EndConversation);
   }, []);
-  
-  
+
+
   const [textMessages, setTextMessages] = useState([])
   useEffect(() => {
     // Your asynchronous operations to convert Blobs to text
@@ -87,27 +86,20 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson, setProfile} : Pr
       const textMessages = await Promise.all(messageHistory.map(async (message, idx) => {
         if (message) {
           message = await blobToText(message.data);
-
           if (message === MessageType.EndConversation) {
             clearProfile()
           }
-
           if (currentPerson === '' && message !== MessageType.EndConversation) {
             setCurrentPerson('Bob')
           }
-
-
-          return message 
+          return message
         }
         return null;
       }));
       setTextMessages(textMessages)
       return textMessages
     };
-
     convertBlobsToText()
-
-    
   }, [messageHistory]);
 
 
@@ -131,42 +123,27 @@ export const WebSocketDemo = ({currentPerson, setCurrentPerson, setProfile} : Pr
 
   return (
     <div>
-    <button 
-      onClick={handleClickChangeSocketUrl}
-      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    >
-      Click Me to change Socket Url
-    </button>
-    <button
-      onClick={handleClickSendMessage}
-      disabled={readyState !== ReadyState.OPEN}
-      className={`bg-${readyState === ReadyState.OPEN ? 'green' : 'green'}-500 
+      <button
+        onClick={handleClickSendMessage}
+        disabled={readyState !== ReadyState.OPEN}
+        className={`bg-${readyState === ReadyState.OPEN ? 'green' : 'green'}-500 
                   ${readyState === ReadyState.OPEN ? 'hover:bg-green-700' : ''} 
                   text-white font-bold py-2 px-4 rounded`}
-    >
-      Click Me to send 'Hello'
-    </button>
-    <button 
-      onClick={clearProfile}
-      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    >
-      Click Me to Clear Conversation
-    </button>
-    <button 
-      onClick={() => {
-        aliceInit2pc(0, sendMessage)
-      }}
-      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    >
-      Click Me to start the 2pc
-    </button>
-    <span>The WebSocket is currently {connectionStatus}</span>
-
-    <ul>
-      {textMessages.map((message, idx) => (
-        <li key={idx} className="mb-2">{message ? message : null}</li>
-      ))}
-    </ul>
-  </div>
+      >
+        Click Me to send 'Hello'
+      </button>
+      <button
+        onClick={clearProfile}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Click Me to Clear Conversation
+      </button>
+      <span>The WebSocket is currently {connectionStatus}</span>
+      <ul>
+        {textMessages.map((message, idx) => (
+          <li key={idx} className="mb-2">{message ? message : null}</li>
+        ))}
+      </ul>
+    </div>
   );
 };
