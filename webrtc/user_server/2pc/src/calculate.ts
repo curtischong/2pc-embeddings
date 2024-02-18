@@ -103,10 +103,7 @@ const aliceInit2pc = (subEmbeddingIdx: number) => {
         aliceInputs[`A_${i}`] = getNthBit(aliceWealth, i);
     }
 
-    // TODO: get subEmbedding
-    // const quantizedInput = quantizeVector(subEmbedding)
-
-    // const subEmbedding = subEmbeddings[subEmbeddingIdx]
+    // const subEmbedding = getSubEmbedding(subEmbeddingIdx)
     // for(let dim = 0; dim < numDimensionsToDot; dim++) {
     //     for(let bit = 0; bit < 4; bit++) {
     //         aliceInputs[`vectorA_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
@@ -160,7 +157,7 @@ interface AliceVVals{
     [inputName: string]: bigint
 }
 
-const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx:number) => {
+const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx: number) => {
     // BOB
     const bobWealth = 1e6;
     const bobInputs: NamedInputOutput = {};
@@ -168,7 +165,7 @@ const bobReceive2pc = (ot_bob_input: BobOTInputs, subEmbeddingIdx:number) => {
         bobInputs[`B_${i}`] = getNthBit(bobWealth, i);
     }
 
-    // const subEmbedding = subEmbeddings[subEmbeddingIdx]
+    // const subEmbedding = getSubEmbedding(subEmbeddingIdx)
     // for(let dim = 0; dim < numDimensionsToDot; dim++) {
     //     for(let bit = 0; bit < 4; bit++) {
     //         bobInputs[`vectorB_${dim*4 + bit}`] = getNthBit(subEmbedding.quantized[dim], bit);
@@ -280,13 +277,13 @@ const calculateDotProduct = (subEmbeddingIdx:number):number => {
     return 0
 }
 
-const getSubEmbedding = (subEmbeddingIdx: number) => {
+const getSubEmbedding = (subEmbeddingIdx: number): QuantizedInput => {
     const embedding = [1,2,3,4]
     // pad embedding to be a multiple of numDimensionsToDot
     const padding = new Array(numDimensionsToDot - (embedding.length % numDimensionsToDot)).fill(0)
     const paddedEmbedding = embedding.concat(padding)
     const subEmbedding = paddedEmbedding.slice(subEmbeddingIdx*numDimensionsToDot, subEmbeddingIdx*numDimensionsToDot + numDimensionsToDot)
-    return subEmbedding
+    return quantizeVector(subEmbedding)
 }
 
 const aliceComputeDotProduct = () => {
