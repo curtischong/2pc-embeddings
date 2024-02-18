@@ -1,123 +1,117 @@
 'use client'
 import React, { useState, useCallback, useEffect } from 'react';
-import {WebSocketDemo} from '../../components/WebRTC';
-import  { aliceComputeDotProduct, aliceInit2pc, aliceReceiveVFromBob } from '../../2pc/src/calculate';
+import { WebSocketDemo } from '../../components/WebRTC';
+import { aliceComputeDotProduct, aliceInit2pc, aliceReceiveVFromBob } from '../../2pc/src/calculate';
 
 
 
 const Home = () => {
 
-const [currentPerson , setCurrentPerson] = useState('')
-const [messageHistory, setMessageHistory] = useState([]);
-const [textMessages, setTextMessages] = useState([])
+  const [currentPerson, setCurrentPerson] = useState('')
+  const [messageHistory, setMessageHistory] = useState([]);
+  const [textMessages, setTextMessages] = useState([])
 
 
 
 
-const syncConversation = async () => {
-  try {
-    const ws = new WebSocket('ws://localhost:8000/connect');
+  const syncConversation = async () => {
+    try {
+      const ws = new WebSocket('ws://localhost:8000/connect');
 
-ws.onopen = () => {
-  console.log('WebSocket connection established');
-  // INITIALIZE THIS CONVERSATION ID
-  // Get the other userID as well...
+      ws.onopen = () => {
+        console.log('WebSocket connection established');
+        const userId = getOrCreateUserID();
+        ws.send(JSON.stringify({ userId, messageHistory }));
 
-  const userId = getOrCreateUserID();
-  ws.send(JSON.stringify({ userId , messageHistory}));
-  
-};
+      };
 
-ws.onmessage = (event) => {
-  console.log('Message received:', event.data);
-};
+      ws.onmessage = (event) => {
+        console.log('Message received:', event.data);
+      };
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+      ws.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
-ws.onerror = (error) => {
-  console.error('WebSocket error:', error);
-};
-
-ws.onclose = () => {
-  console.log('WebSocket connection closed');
-};
-
-  } catch (error) {
-    console.error('Error:', error);
+  function generateUniqueID() {
+    return 'id-' + Math.random().toString(36).substr(2, 16);
   }
-};
 
-function generateUniqueID() {
-  return 'id-' + Math.random().toString(36).substr(2, 16);
-}
-
-function getOrCreateUserID() {
+  function getOrCreateUserID() {
     let userID = localStorage.getItem('userID');
     if (!userID) {
-        userID = generateUniqueID();
-        localStorage.setItem('userID', userID);
+      userID = generateUniqueID();
+      localStorage.setItem('userID', userID);
     }
     return userID;
-}
-
-const disconnectConversation = async () => {
-  try {
-    const ws = new WebSocket('ws://localhost:8000/disconnect');
-
-ws.onopen = () => {
-  //  Send user ID when connecting and accessed when disconnected
-  // REMOVE THIS CONVERSATION ID
-    const userId = getOrCreateUserID();
-      ws.send(JSON.stringify({ userId }));
-
-};
-
-ws.onmessage = (event) => {
-  console.log('Message received:', event.data);
-};
-
-ws.onerror = (error) => {
-  console.error('WebSocket error:', error);
-};
-
-ws.onclose = () => {
-  console.log('WebSocket connection closed');
-};
-
-  } catch (error) {
-    console.error('Error:', error);
   }
-};
+
+  const disconnectConversation = async () => {
+    try {
+      const ws = new WebSocket('ws://localhost:8000/disconnect');
+
+      ws.onopen = () => {
+        //  Send user ID when connecting and accessed when disconnected
+        // REMOVE THIS CONVERSATION ID
+        const userId = getOrCreateUserID();
+        ws.send(JSON.stringify({ userId }));
+
+      };
+
+      ws.onmessage = (event) => {
+        console.log('Message received:', event.data);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
 
-// Initializing your profile gets your uuid and sends it to the server
-const getProfile = async () => {
-  try {
-    const response = await fetch('http://localhost:8000/embeddings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      //  TODO: make form that lets you input this data from About Me section
-      body: JSON.stringify({
-        MBTI: 'example',
-        Love_Languages: 'example',
-        Hobbies: 'example'
-      })
-    });
+  // Initializing your profile gets your uuid and sends it to the server
+  const getProfile = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        //  TODO: make form that lets you input this data from About Me section
+        body: JSON.stringify({
+          MBTI: 'example',
+          Love_Languages: 'example',
+          Hobbies: 'example'
+        })
+      });
 
-    const data = await response.json();
-    const embedding = JSON.stringify(data)
-    // setResponseText(embedding);
-    setProfile(embedding)
-    const userId = getOrCreateUserID();
-    syncConversation()
+      const data = await response.json();
+      const embedding = JSON.stringify(data)
+      // setResponseText(embedding);
+      setProfile(embedding)
+      const userId = getOrCreateUserID();
+      syncConversation()
 
-  } catch (error) {
-    console.error('Error:', error);
-  }
-};
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
-   // Initialize state with the value from localStorage or a default value
-   const [profile, setProfile] = useState(() => {
+  // Initialize state with the value from localStorage or a default value
+  const [profile, setProfile] = useState(() => {
     const saved = localStorage.getItem('profile');
     return saved ? JSON.parse(saved) : '';
   });
@@ -161,12 +155,12 @@ const getProfile = async () => {
       )}
       <div className="flex justify-center gap-4">
         <div>
-        
+
           <button onClick={getProfile} className="px-4 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">Upload Profile for Matches</button>
         </div>
         <button onClick={syncConversation} className="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Connect WebSocket</button>
         <button onClick={disconnectConversation} className="px-4 py-2 rounded-md bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">Disconnect WebSocket</button>
-        <WebSocketDemo currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} setProfile={setProfile} disconnectConversation={disconnectConversation} syncConversation={syncConversation} messageHistory={messageHistory} setMessageHistory={setMessageHistory}/>
+        <WebSocketDemo currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} setProfile={setProfile} disconnectConversation={disconnectConversation} syncConversation={syncConversation} messageHistory={messageHistory} setMessageHistory={setMessageHistory} />
       </div>
     </div>
   );

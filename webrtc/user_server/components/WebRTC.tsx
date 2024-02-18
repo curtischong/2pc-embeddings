@@ -17,6 +17,7 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
   const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
   const [messages, setMessages] = useState([])
   useEffect(() => {
+    // TODO: move this
     const blobToText = (blob: any) => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -33,7 +34,6 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
       // keep alice as alice and bob as bob
       const message = lastMessage as any
       const messageType = message.messageType
-      console.log(messageType)
       switch (messageType) {
         case MessageType.AliceInit2pc:
           // setCurrentPerson('Bob')
@@ -113,12 +113,12 @@ export const WebSocketDemo = ({ currentPerson, setCurrentPerson }: Props) => {
       >
         Click Me to send 'Hello'
       </button>
-      <button
+      <buttonq
         onClick={clearConversation}
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
       >
         Click Me to Clear Conversation
-      </button>
+      </buttonq>
       <span>The WebSocket is currently {connectionStatus}</span>
       <ul>
         {messages.map((message, idx) => (

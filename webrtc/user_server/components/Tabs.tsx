@@ -15,7 +15,7 @@ export default function Tabs() {
     return (
         <div>
             <div className="p-4">
-                {activeTab === 'tab1' && <ToggleBeacon2 />}
+                {activeTab === 'tab1' && <SwipeCards />}
                 {activeTab === 'tab2' && <ToggleBeacon />}
                 {activeTab === 'tab3' && <WebSocketDemo currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} />}
             </div>

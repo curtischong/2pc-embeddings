@@ -9,7 +9,7 @@ import { Message } from 'postcss';
 const SERVER_IP = 'localhost';
 
 function generateUuidV4() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
@@ -45,25 +45,25 @@ export default function ToggleBeacon() {
 
     useEffect(() => {
         uuid = localStorage.getItem('uuid');
-      if (!uuid) {
-        uuid = generateUuidV4();
-        localStorage.setItem('uuid', uuid);
-      }
-    //   console.log(uuid);
+        if (!uuid) {
+            uuid = generateUuidV4();
+            localStorage.setItem('uuid', uuid);
+        }
+        //   console.log(uuid);
     }) // DO NOT add ,[]. uuid will NOT be set
 
-        
-    ws.onmessage = function(event) {
+
+    ws.onmessage = function (event) {
         // console.log(event.data);
         // console.log(JSON.parse(event.data));
 
         let message = null;
         try {
             message = JSON.parse(event.data);
-        } catch(e) {
+        } catch (e) {
             console.warn(e);
         }
-        if (message === null){
+        if (message === null) {
             console.error("couldn't parse message");
             return
         }
@@ -72,17 +72,17 @@ export default function ToggleBeacon() {
             setKnownUUIDS(message.uuids);
         }
 
-        if('2pc' in message){
+        if ('2pc' in message) {
             console.log('2pc message', message)
             const messageType = message.messageType
             let aliceUUID = "ERROR - hsould be filled";
             let bobUUID = "ERROR - hsould be filled";
-            if(messageType == MessageType.AliceInit2pc){
+            if (messageType == MessageType.AliceInit2pc) {
                 localStorage.setItem('aliceUUID', message.uuid)
                 localStorage.setItem('bobUUID', message.target_uuid)
                 aliceUUID = message.uuid
                 bobUUID = message.target_uuid
-            }else{
+            } else {
                 aliceUUID = localStorage.getItem('aliceUUID')
                 bobUUID = localStorage.getItem('bobUUID')
             }
@@ -103,44 +103,45 @@ export default function ToggleBeacon() {
                     ...message,
                     uuid: bobUUID,
                     target_uuid: aliceUUID,
-                },messageType)
+                }, messageType)
             }
 
             // console.log("messageType", messageType)
             switch (messageType) {
-            case MessageType.AliceInit2pc:
-                // setCurrentPerson('Bob')
-                bobReceive2pc(message.garbledCircuit, message.bobOtInputs, message.aliceInputLabels, message.subEmbeddingIdx, sendAliceMessage)
-                break;
-            case MessageType.BobReceive2pc:
-                aliceReceiveVFromBob(message.aliceVVals, sendBobMessage)
-                break;
-            case MessageType.AliceReceiveVFromBob:
-                bobResolveInputs(message.bobMVals, sendAliceMessage)
-                break;
-            case MessageType.BobResolveInputs:
-                aliceCalcFinalSum(message.outputLabels)
-                break;
-            case MessageType.AliceComputeDotProduct:
-                console.log('Alice computed dot product:', message.totalDotProduct)
-                break;
-            default:
-                console.log("unhandled msgType", messageType)
-                break;
+                case MessageType.AliceInit2pc:
+                    // setCurrentPerson('Bob')
+                    bobReceive2pc(message.garbledCircuit, message.bobOtInputs, message.aliceInputLabels, message.subEmbeddingIdx, sendAliceMessage)
+                    break;
+                case MessageType.BobReceive2pc:
+                    aliceReceiveVFromBob(message.aliceVVals, sendBobMessage)
+                    break;
+                case MessageType.AliceReceiveVFromBob:
+                    bobResolveInputs(message.bobMVals, sendAliceMessage)
+                    break;
+                case MessageType.BobResolveInputs:
+                    // TODO: use embeddings
+                    aliceCalcFinalSum(message.outputLabels)
+                    break;
+                case MessageType.AliceComputeDotProduct:
+                    console.log('Alice computed dot product:', message.totalDotProduct)
+                    break;
+                default:
+                    console.log("unhandled msgType", messageType)
+                    break;
             }
         }
     };
 
-    ws.onopen = function(event) {
+    ws.onopen = function (event) {
         // console.log("onopen")
         if (beaconActive)
-        ws.send(JSON.stringify({
-            uuid: uuid,
-            message: 'connect'
-        }));
+            ws.send(JSON.stringify({
+                uuid: uuid,
+                message: 'connect'
+            }));
     }
 
-    ws.onclose = function(event) {
+    ws.onclose = function (event) {
         // console.log("onclose")
         ws.send(JSON.stringify({
             uuid: uuid,
@@ -155,20 +156,20 @@ export default function ToggleBeacon() {
             console.log('connect');
             try {
                 if (ws)
-                ws.send(JSON.stringify({
-                    uuid: uuid,
-                    message: 'connect'
-                }));
-            } catch {}
+                    ws.send(JSON.stringify({
+                        uuid: uuid,
+                        message: 'connect'
+                    }));
+            } catch { }
         } else {
             console.log('disconnect');
             try {
                 if (ws)
-                ws.send(JSON.stringify({
-                    uuid: uuid,
-                    message: 'disconnect'
-                }));
-            } catch {}
+                    ws.send(JSON.stringify({
+                        uuid: uuid,
+                        message: 'disconnect'
+                    }));
+            } catch { }
         }
         setBeaconActive(!beaconActive);
     };
@@ -182,8 +183,8 @@ export default function ToggleBeacon() {
         //     uuid: uuid,
         //     message: 'share ' + target_uuid
         // }));
-        
-        aliceInit2pc(0, (message:any, messageType:MessageType) => {
+
+        aliceInit2pc(0, (message: any, messageType: MessageType) => {
             localStorage.setItem('bobUUID', target_uuid)
             localStorage.setItem('aliceUUID', uuid as string)
             sendMessage({ // we are alice sending to bob
@@ -206,29 +207,31 @@ export default function ToggleBeacon() {
         <div>
             <h1 className="text-3xl font-bold text-pink-600">Love Beacon</h1>
             <p className="text-pink-600 mt-2 text-sm">Find Love Nearby</p>
-            
+
             {/* Conditional Beacon Icon */}
             <div className={`mt-4 text-3xl ${beaconActive ? 'animate-ping' : ''}`}>
                 {beaconActive ? '📡' : '📶'}
             </div>
 
-            <button 
-                onClick={toggleBeacon} 
+            <button
+                onClick={toggleBeacon}
                 className={`mt-8 px-6 py-2 rounded-lg shadow transition duration-200 ease-in-out font-medium
-                ${beaconActive ? 'bg-red-500 text-white' : 'bg-pink-500 text-white hover:bg-pink-700'}`}
+            ${beaconActive ? 'bg-red-500 text-white' : 'bg-pink-500 text-white hover:bg-pink-700'}`}
             >
                 {beaconActive ? 'Deactivate Beacon' : 'Activate Beacon'}
             </button>
 
             {beaconActive && knownUUIDS.map((uuid, index) => (
-                <button
-                    key={uuid}
-                    className={`flex items-center justify-center flex-1 py-2 px-4 text-sm font-medium leading-5 text-blue-700 rounded-lg`}
-                    onClick={() => connectWithOther(uuid)}
-                >
-                    Connect with {uuid}
-                </button>
+                <div key={uuid} className="mt-4">
+                    <button
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                        onClick={() => connectWithOther(uuid)}
+                    >
+                        Check compatibility with {uuid}
+                    </button>
+                </div>
             ))}
         </div>
     );
+
 }
