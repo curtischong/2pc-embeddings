@@ -49,6 +49,8 @@ export default function ToggleBeacon() {
         uuid = generateUuidV4();
         localStorage.setItem('uuid', uuid);
       }
+
+      localStorage.setItem('embedding', JSON.stringify([1,1,1,1]))
     //   console.log(uuid);
     }) // DO NOT add ,[]. uuid will NOT be set
 

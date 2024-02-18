@@ -291,6 +291,8 @@ const bobResolveInputs = (bobMVals: BobMVals, sendMessage: any) => {
         const m = ot_bob2(bobInputs[inputName], bobOTInputs[inputName], bobVKVals[inputName], bobMVals[inputName]);
         bobInputLabels[inputName] = m
     }
+    console.log("aliceInputLabels", aliceInputLabels)
+    console.log("garbledCircuit", garbledCircuit)
 
     console.log(`bob inputs -> ${JSON.stringify(bobInputs)}`);
     console.log(`bob input labels -> ${JSON.stringify(bobInputLabels)}`);
