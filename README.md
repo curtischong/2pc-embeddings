@@ -14,7 +14,7 @@ Well... Two Party Computation (2PC) solves this problem! (computing on multiple 
 
 ![Dot Product Circuit](circuit.jpeg)
 
-This is an implementation of Yao's Garbled Circuits (a 2PC protocol). The main code was based on https://github.com/tdjsnelling/garbled-circuits/tree/master. It was very helpful because they found out how to use Verilog to define the circuits.
+This is an implementation of Yao's Garbled Circuits (a 2PC protocol). The main code was based on https://github.com/tdjsnelling/garbled-circuits/tree/master. It was very helpful because they figured out how to use Verilog to define the circuits.
 
 However, I modified it for optimization reasons AND to make the 2PC happen between different browser clients (rather than in just one nodeJS process)
 
