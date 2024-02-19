@@ -32,7 +32,7 @@ However, I modified it for optimization reasons AND to make the 2PC happen betwe
 - 4-bit quantization
 - "Chunking" the dot product calculation 10 dimensions at a time. We first calculate the similarity for the first 10 dimensions, then the next 10, etc. until we've calculated similarity for all dimensions of both vectors.
   - At the end, we do a sum of these dot product chunks. It DOES leak info (you know the dot product of every 10 dimensions of the embedding), but this makes the circuit much smaller
-- Reducing the number of back-and-forth calls during the Oblivious Transfer (although, at least one call can be removed)
+- Reducing the number of back-and-forth calls during the Oblivious Transfer (there's still room for improvement)
 - Using only the first 50 dimensions of the dimension vector (ikik. This loses a lot of info)
 - Fast modular exponentiation
 
