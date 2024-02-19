@@ -2,6 +2,10 @@
 
 
 
+https://github.com/curtischong/love-beacon/assets/10677873/5a4e6303-77fc-4385-9e19-8460bdfac9f0
+
+
+
 Love Beacon is a MatchMaking app. After filling out your profile, a language model converts it into an embedding. A match occurs if you have a high cosine similarity with others. At no point does your embedding leave your device or is shared with other people.
 
 So how are we able to calculate cosine similarity? Don't the two vectors need to be on the same computer to do the multiply and add operations?
