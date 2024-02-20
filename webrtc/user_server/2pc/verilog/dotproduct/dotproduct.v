@@ -1,3 +1,7 @@
+// This defines the circuit that performs the dot product.
+// I decided to use 4 input vectors (the first 2 are the bits of each dim of vector, the last 2 are the signs of each vector)
+// Why not just make a circuit to do a floating point dot product? Cause it'll be a more complex circuit. I believe this is the simplest way to do signed dot products.
+
 module DotProduct(
     input [39:0] vectorA, // 10 elements, each 4 bits
     input [39:0] vectorB,
