@@ -374,6 +374,8 @@ interface QuantizedInput {
     quantized: number[]
 }
 
+// Why do we need to quanitze? We need to convert a js number into a binary representation to feed into the circuit.
+// I chose to quantize the number into 4-bits since that gives us 16 values per dimension (that's a lot!) (and Llama 2 performs well when quantized into 4 bits)
 const quantizeVector = (embedding:number[]): QuantizedInput => {
     const isPositive = embedding.map((x) => x > 0 ? 1 : 0)
     const quantized = embedding.map(quantizeTo4Bits)
